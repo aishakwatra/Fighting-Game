@@ -95,10 +95,11 @@ int main()
 	// load models
 	// -----------
 	// idle 3.3, walk 2.06, run 0.83, punch 1.03, kick 1.6
-	Model ourModel("Object/Wrestler/Ch43_nonPBR.dae");
-	Animation idleAnimation("Object/Wrestler/Idle.dae", &ourModel);
-	Animation walkAnimation("Object/Wrestler/Walking.dae", &ourModel);
-	Animation runAnimation("Object/Wrestler/Fast Run.dae", &ourModel);
+	Model ourModel("Object/Vegas/Big Vegas.dae");
+	//Model guitarModel("Object/Guitar/11682_guitar_v1_L3.dae");
+	Animation idleAnimation("Object/Vegas/Idle.dae", &ourModel);
+	Animation walkAnimation("Object/Vegas/WalkForward.dae", &ourModel);
+	Animation runAnimation("Object/Vegas/WalkBack.dae", &ourModel);
 	Animation punchAnimation("Object/Wrestler/Cross Punch.dae", &ourModel);
 	Animation kickAnimation("Object/Wrestler/Mma Kick.dae", &ourModel);
 	Animator animator(&idleAnimation);
@@ -273,6 +274,14 @@ int main()
 		model = glm::scale(model, glm::vec3(.5f, .5f, .5f));	// it's a bit too big for our scene, so scale it down
 		ourShader.setMat4("model", model);
 		ourModel.Draw(ourShader);
+
+
+		//glm::mat4 model2 = glm::mat4(1.0f);
+		//model2 = glm::translate(model2, glm::vec3(0.0f, -0.4f, 0.0f)); // translate it down so it's at the center of the scene
+		//model2 = glm::scale(model2, glm::vec3(.5f, .5f, .5f));	// it's a bit too big for our scene, so scale it down
+		//ourShader.setMat4("model", model2);
+		//guitarModel.Draw(ourShader);
+
 
 
 		// glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
