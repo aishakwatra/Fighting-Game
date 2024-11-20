@@ -52,7 +52,14 @@ public:
 		else return &(*iter);
 	}
 
-	
+	glm::mat4 GetBoneTransform(const std::string& boneName) {
+		Bone* bone = FindBone(boneName);
+		if (bone) {
+			return bone->GetFinalTransformation();  // Make sure this calculation is done elsewhere
+		}
+		return glm::mat4(1.0f);  // Identity matrix if bone not found
+	}
+
 	inline float GetTicksPerSecond() { return m_TicksPerSecond; }
 	inline float GetDuration() { return m_Duration;}
 	inline const AssimpNodeData& GetRootNode() { return m_RootNode; }
@@ -86,6 +93,8 @@ private:
 
 		m_BoneInfoMap = boneInfoMap;
 	}
+
+
 
 	void ReadHierarchyData(AssimpNodeData& dest, const aiNode* src)
 	{

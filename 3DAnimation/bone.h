@@ -84,7 +84,10 @@ public:
 	glm::mat4 GetLocalTransform() { return m_LocalTransform; }
 	std::string GetBoneName() const { return m_Name; }
 	int GetBoneID() { return m_ID; }
-
+	
+	glm::mat4 GetFinalTransformation() const {
+		return m_FinalTransformation; // This should be calculated during the animation update
+	}
 
 
 	int GetPositionIndex(float animationTime)
@@ -96,6 +99,11 @@ public:
 		}
 		assert(0);
 	}
+
+	void SetFinalTransformation(const glm::mat4& transform) {
+		m_FinalTransformation = transform;
+	}
+
 
 	int GetRotationIndex(float animationTime)
 	{
@@ -186,6 +194,7 @@ public:
 	int m_NumRotations;
 	int m_NumScalings;
 
+	glm::mat4 m_FinalTransformation;
 	glm::mat4 m_LocalTransform;
 	std::string m_Name;
 	int m_ID;

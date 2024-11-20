@@ -42,6 +42,66 @@ enum AnimState {
 	WALK_IDLE,
 	WALK
 };
+struct BoxCollider {
+	glm::vec3 center;
+	glm::vec3 size;
+};
+
+struct Player {
+	Model model;
+	std::map<std::string, Animation> animations;
+	BoxCollider collider;
+	glm::vec3 position;
+	std::string currentAnimation;
+
+	// Constructor initializes model and sets initial position and collider size
+	Player(const std::string& modelPath, const glm::vec3& pos, const glm::vec3& colliderSize)
+		: model(modelPath), position(pos), collider{ pos, colliderSize } {}
+
+	// Load animations for the player
+	void loadAnimations(const std::map<std::string, std::string>& animationPaths) {
+		for (const auto& anim : animationPaths) {
+			animations[anim.first] = Animation(anim.second, &model);
+		}
+		currentAnimation = "idle"; // Default start with idle animation
+	}
+
+	// Update the player's collider to the current position
+	void updateCollider() {
+		collider.center = position; // Assuming the collider moves with the player
+	}
+
+	// Set the current animation based on player's state
+	void setAnimation(const std::string& animName) {
+		if (animations.find(animName) != animations.end()) {
+			currentAnimation = animName;
+		}
+	}
+
+	// Update animation based on deltaTime
+	void updateAnimation(float deltaTime) {
+		//animations[currentAnimation].Update(deltaTime);
+	}
+
+	// Render the player using the shader
+	void draw(Shader& shader) {
+		glm::mat4 modelMatrix = glm::mat4(1.0f);
+		modelMatrix = glm::translate(modelMatrix, position);
+		shader.setMat4("model", modelMatrix);
+		//animations[currentAnimation].Draw(shader);
+	}
+};
+
+Player player1("Object/Vegas/Big Vegas.dae", glm::vec3(0.0f, -0.4f, 0.0f), glm::vec3(1.0f, 2.0f, 1.0f));
+
+std::map<std::string, std::string> player1Anims = {
+	{"idle", "Object/Vegas/Idle.dae"},
+	{"walk", "Object/Vegas/WalkForward.dae"},
+	{"run", "Object/Vegas/WalkBack.dae"},
+	{"punch", "Object/Vegas/Punching.dae"},
+	{"kick", "Object/Vegas/Kick.dae"}
+};
+
 
 int main()
 {
@@ -100,9 +160,11 @@ int main()
 	Animation idleAnimation("Object/Vegas/Idle.dae", &ourModel);
 	Animation walkAnimation("Object/Vegas/WalkForward.dae", &ourModel);
 	Animation runAnimation("Object/Vegas/WalkBack.dae", &ourModel);
-	Animation punchAnimation("Object/Wrestler/Cross Punch.dae", &ourModel);
-	Animation kickAnimation("Object/Wrestler/Mma Kick.dae", &ourModel);
+	Animation punchAnimation("Object/Vegas/Punching.dae", &ourModel);
+	Animation kickAnimation("Object/Vegas/Kick.dae", &ourModel);
 	Animator animator(&idleAnimation);
+
+	player1.loadAnimations(player1Anims);
 	enum AnimState charState = IDLE;
 	float blendAmount = 0.0f;
 	float blendRate = 0.055f;
@@ -196,7 +258,7 @@ int main()
 			printf("idle_punch\n");
 			break;
 		case PUNCH_IDLE:
-			if (animator.m_CurrentTime > 0.7f) {
+			if (animator.m_CurrentTime > 0.7 * punchAnimation.GetDuration()) {
 				blendAmount += blendRate;
 				blendAmount = fmod(blendAmount, 1.0f);
 				animator.PlayAnimation(&punchAnimation, &idleAnimation, animator.m_CurrentTime, animator.m_CurrentTime2, blendAmount);
@@ -226,7 +288,7 @@ int main()
 			printf("idle_kick\n");
 			break;
 		case KICK_IDLE:
-			if (animator.m_CurrentTime > 1.0f) {
+			if (animator.m_CurrentTime > 0.7f * kickAnimation.GetDuration()) {
 				blendAmount += blendRate;
 				blendAmount = fmod(blendAmount, 1.0f);
 				animator.PlayAnimation(&kickAnimation, &idleAnimation, animator.m_CurrentTime, animator.m_CurrentTime2, blendAmount);
@@ -245,7 +307,8 @@ int main()
 			break;
 		}
 
-
+		player1.updateCollider();
+		//payer2.updateCollider();
 
 		animator.UpdateAnimation(deltaTime);
 
@@ -340,6 +403,18 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 	lastY = ypos;
 
 	camera.ProcessMouseMovement(xoffset, yoffset);
+}
+
+bool checkCollision(const BoxCollider& a, const BoxCollider& b) {
+	// Check if boxes overlap on all axes
+	bool xCollide = abs(a.center.x - b.center.x) * 2 < (a.size.x + b.size.x);
+	bool yCollide = abs(a.center.y - b.center.y) * 2 < (a.size.y + b.size.y);
+	bool zCollide = abs(a.center.z - b.center.z) * 2 < (a.size.z + b.size.z);
+	return xCollide && yCollide && zCollide;
+}
+
+void updateGame() {
+
 }
 
 // glfw: whenever the mouse scroll wheel scrolls, this callback is called
