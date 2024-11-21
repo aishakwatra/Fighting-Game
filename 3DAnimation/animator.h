@@ -15,7 +15,34 @@
 class Animator
 {
 public:
+
+	Animator ()
+	{
+		m_CurrentTime = 0.0;
+		m_CurrentAnimation = NULL;
+		m_CurrentAnimation2 = NULL;
+		m_blendAmount = 0;
+
+		m_FinalBoneMatrices.reserve(100);
+
+		for (int i = 0; i < 100; i++)
+			m_FinalBoneMatrices.push_back(glm::mat4(1.0f));
+	}
+
 	Animator(Animation* animation)
+	{
+		m_CurrentTime = 0.0;
+		m_CurrentAnimation = animation;
+		m_CurrentAnimation2 = NULL;
+		m_blendAmount = 0;
+
+		m_FinalBoneMatrices.reserve(100);
+
+		for (int i = 0; i < 100; i++)
+			m_FinalBoneMatrices.push_back(glm::mat4(1.0f));
+	}
+
+	void LoadAnimation(Animation* animation)
 	{
 		m_CurrentTime = 0.0;
 		m_CurrentAnimation = animation;
@@ -54,6 +81,14 @@ public:
 		m_CurrentTime2 = time2;
 		m_blendAmount = blend;
 	}
+
+	void PlayAnimation(Animation* pAnimation) {
+		m_CurrentAnimation = pAnimation;
+		m_CurrentAnimation2 = nullptr; // Ensure no blending happens
+		m_blendAmount = 0.0f;
+		m_CurrentTime = 0.0f; // Restart the animation
+	}
+
 
 	glm::mat4 UpdateBlend(Bone* Bone1, Bone* Bone2) {
 		glm::vec3 bonePos1, bonePos2, finalPos;

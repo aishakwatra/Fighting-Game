@@ -1,21 +1,18 @@
 ﻿  3DAnimation.cpp
-D:\Capt\Fighting-Game\3DAnimation\bone.h(45,20): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-D:\Capt\Fighting-Game\3DAnimation\bone.h(56,20): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-D:\Capt\Fighting-Game\3DAnimation\bone.h(67,20): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-D:\Capt\Fighting-Game\3DAnimation\model_animation.h(174,37): warning C4018: '<': signed/unsigned mismatch
-D:\Capt\Fighting-Game\3DAnimation\animation.h(31,25): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-D:\Capt\Fighting-Game\3DAnimation\animation.h(32,31): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
-D:\Capt\Fighting-Game\3DAnimation\animation.h(63,44): warning C4244: 'return': conversion from 'int' to 'float', possible loss of data
-D:\Capt\Fighting-Game\3DAnimation\animation.h(107,21): warning C4018: '<': signed/unsigned mismatch
-D:\Capt\Fighting-Game\3DAnimation\3DAnimation.cpp(119,22): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-D:\Capt\Fighting-Game\3DAnimation\3DAnimation.cpp(331,11): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-D:\Capt\Fighting-Game\3DAnimation\3DAnimation.cpp(332,11): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-D:\Capt\Fighting-Game\3DAnimation\3DAnimation.cpp(336,16): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-D:\Capt\Fighting-Game\3DAnimation\3DAnimation.cpp(337,16): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-D:\Capt\Fighting-Game\3DAnimation\3DAnimation.cpp(339,10): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-D:\Capt\Fighting-Game\3DAnimation\3DAnimation.cpp(340,10): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-D:\Capt\Fighting-Game\3DAnimation\3DAnimation.cpp(349,28): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-D:\Capt\Fighting-Game\3DAnimation\bone.h(116,1): warning C4715: 'Bone::GetRotationIndex': not all control paths return a value
-D:\Capt\Fighting-Game\3DAnimation\bone.h(126,1): warning C4715: 'Bone::GetScaleIndex': not all control paths return a value
-D:\Capt\Fighting-Game\3DAnimation\bone.h(101,1): warning C4715: 'Bone::GetPositionIndex': not all control paths return a value
-  3DAnimation.vcxproj -> D:\Capt\Fighting-Game\x64\Debug\3DAnimation.exe
+D:\DT384\Fighting-Game\3DAnimation\bone.h(45,20): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+D:\DT384\Fighting-Game\3DAnimation\bone.h(56,20): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+D:\DT384\Fighting-Game\3DAnimation\bone.h(67,20): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+D:\DT384\Fighting-Game\3DAnimation\model_animation.h(172,37): warning C4018: '<': signed/unsigned mismatch
+D:\DT384\Fighting-Game\3DAnimation\animation.h(31,25): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+D:\DT384\Fighting-Game\3DAnimation\animation.h(32,31): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
+D:\DT384\Fighting-Game\3DAnimation\animation.h(63,44): warning C4244: 'return': conversion from 'int' to 'float', possible loss of data
+D:\DT384\Fighting-Game\3DAnimation\animation.h(107,21): warning C4018: '<': signed/unsigned mismatch
+D:\DT384\Fighting-Game\3DAnimation\3DAnimation.cpp(111,22): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+D:\DT384\Fighting-Game\3DAnimation\3DAnimation.cpp(326,11): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+D:\DT384\Fighting-Game\3DAnimation\3DAnimation.cpp(327,11): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+D:\DT384\Fighting-Game\3DAnimation\3DAnimation.cpp(331,16): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+D:\DT384\Fighting-Game\3DAnimation\3DAnimation.cpp(332,16): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+D:\DT384\Fighting-Game\3DAnimation\3DAnimation.cpp(334,10): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+D:\DT384\Fighting-Game\3DAnimation\3DAnimation.cpp(335,10): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+D:\DT384\Fighting-Game\3DAnimation\3DAnimation.cpp(356,28): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+  3DAnimation.vcxproj -> D:\DT384\Fighting-Game\x64\Debug\3DAnimation.exe

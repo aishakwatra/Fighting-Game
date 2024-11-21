@@ -131,6 +131,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="3DAnimation.cpp" />
+    <ClCompile Include="Player.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="animation.h" />
@@ -139,6 +140,7 @@
     <ClInclude Include="bone.h" />
     <ClInclude Include="camera.h" />
     <ClInclude Include="model_animation.h" />
+    <ClInclude Include="Player.h" />
     <ClInclude Include="shader_m.h" />
   </ItemGroup>
   <ItemGroup>
