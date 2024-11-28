@@ -13,9 +13,16 @@ struct BoxCollider {
 
 enum AnimState {
     IDLE,
+    IDLE_WALK,
     WALK,
+    WALK_IDLE,
+    IDLE_PUNCH,
     PUNCH,
-    KICK
+    PUNCH_IDLE,
+    IDLE_KICK,
+    KICK,
+    KICK_IDLE,
+
 };
 
 class Player {
@@ -31,12 +38,17 @@ public:
     Player(const std::string& modelPath, const glm::vec3& pos, const glm::vec3& colliderSize, const std::map<std::string, std::string>& animationPaths);
 
     void loadAnimations(const std::map<std::string, std::string>& animationPaths);
-    void Action(const std::string& action, bool blend);
+    void Action(const std::string& action);
+    void Action(const std::string& action1, const std::string& action2, float blendAmount,bool blendTime);
     void updateAnimation(float deltaTime);
     void setAnimation(const std::string& animName);
+    
     void update(float deltaTime);
     std::vector<glm::mat4>GetFinalBoneMatrices();
     void draw(Shader& shader);
     void processInput(int key);
     void changeState(AnimState newState);
+    AnimState getState();
+    float getCurrentTime();
+    float getAnimationDuration(const std::string& animName);
 };

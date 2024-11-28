@@ -11,7 +11,8 @@ void Player::loadAnimations(const std::map<std::string, std::string>& animationP
     for (const auto& anim : animationPaths) {
         animations[anim.first] = Animation(anim.second, &model);
     }
-    animator = Animator(&animations.begin()->second); // Default to first animation
+    animator = Animator(&animations.begin()->second);
+
 }
 
 void Player::setAnimation(const std::string& animName) {
@@ -20,18 +21,32 @@ void Player::setAnimation(const std::string& animName) {
     }
 }
 
-void Player::Action(const std::string& action, bool blend) {
+void Player::Action(const std::string& action) {
     if (animations.find(action) == animations.end()) return; // Action not found
 
-    if (blend && currentAnimation != action) {
-        // Start blending from the current animation to the new action
-        animator.PlayAnimation(&animations[currentAnimation], &animations[action], 0.0f, 0.0f, 0.1f);  // Adjust blend parameters as needed
-    }
-    else {
-        // Switch directly to the new action without blending
-        animator.PlayAnimation(&animations[action], nullptr, 0.0f, 0.0f, 0.0f);
-    }
+     animator.PlayAnimation(&animations[action]);
+  
     currentAnimation = action;  // Update the current animation to the new action
+}
+
+void Player::Action(const std::string& action1, const std::string& action2, float blendAmount,bool blendTime) {
+
+    if(blendTime)
+		animator.PlayAnimation(&animations[action1], &animations[action2], animator.m_CurrentTime, 0.0f, blendAmount);
+    else
+    {
+        Animation* secondAnimation = &animations[action2];
+        if (secondAnimation == NULL)
+        {
+            animator.PlayAnimation(&animations[action1], NULL, animator.m_CurrentTime, animator.m_CurrentTime2, blendAmount);
+        }
+        else
+        {
+
+        }
+    }
+    
+
 }
 
 void Player::updateAnimation(float deltaTime) {
@@ -71,4 +86,24 @@ void Player::changeState(AnimState newState) {
             }();
         setAnimation(animName);
     }
+}
+
+AnimState Player::getState() {
+	return state;
+}
+
+float Player::getCurrentTime() {
+	return animator.m_CurrentTime;
+}
+
+
+float Player::getAnimationDuration(const std::string& animName) {
+	if (animations.find(animName) != animations.end()) {
+		return animations[animName].GetDuration();
+    }
+    else
+    {
+      std::cout << "Animation not found" << std::endl;
+    }
+	return 0.0f;
 }
