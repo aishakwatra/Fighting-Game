@@ -100,8 +100,8 @@ int main()
 	Animation idleAnimation("Object/Vegas/Idle.dae", &ourModel);
 	Animation walkAnimation("Object/Vegas/WalkForward.dae", &ourModel);
 	Animation runAnimation("Object/Vegas/WalkBack.dae", &ourModel);
-	Animation punchAnimation("Object/Wrestler/Cross Punch.dae", &ourModel);
-	Animation kickAnimation("Object/Wrestler/Mma Kick.dae", &ourModel);
+	Animation punchAnimation("Object/Vegas/Punching.dae", &ourModel);
+	Animation kickAnimation("Object/Vegas/Kicking.dae", &ourModel);
 	Animator animator(&idleAnimation);
 	enum AnimState charState = IDLE;
 	float blendAmount = 0.0f;
@@ -196,11 +196,11 @@ int main()
 			printf("idle_punch\n");
 			break;
 		case PUNCH_IDLE:
-			if (animator.m_CurrentTime > 0.7f) {
+			if (animator.m_CurrentTime > 0.6 * punchAnimation.GetDuration()) {
 				blendAmount += blendRate;
 				blendAmount = fmod(blendAmount, 1.0f);
 				animator.PlayAnimation(&punchAnimation, &idleAnimation, animator.m_CurrentTime, animator.m_CurrentTime2, blendAmount);
-				if (blendAmount > 0.9f) {
+				if (blendAmount > 0.8f) {
 					blendAmount = 0.0f;
 					float startTime = animator.m_CurrentTime2;
 					animator.PlayAnimation(&idleAnimation, NULL, startTime, 0.0f, blendAmount);
@@ -226,7 +226,7 @@ int main()
 			printf("idle_kick\n");
 			break;
 		case KICK_IDLE:
-			if (animator.m_CurrentTime > 1.0f) {
+			if (animator.m_CurrentTime > 0.7f * kickAnimation.GetDuration()) {
 				blendAmount += blendRate;
 				blendAmount = fmod(blendAmount, 1.0f);
 				animator.PlayAnimation(&kickAnimation, &idleAnimation, animator.m_CurrentTime, animator.m_CurrentTime2, blendAmount);
