@@ -33,12 +33,12 @@ public:
 		m_DeltaTime = dt;
 		if (m_CurrentAnimation)
 		{
-			m_CurrentTime += m_CurrentAnimation->GetTicksPerSecond() * dt;
+			m_CurrentTime += m_CurrentAnimation->GetTicksPerSecond() * dt * m_CurrentAnimation->GetSpeed();
 			m_CurrentTime = fmod(m_CurrentTime, m_CurrentAnimation->GetDuration());
 
 			if (m_CurrentAnimation2)
 			{
-				m_CurrentTime2 += m_CurrentAnimation2->GetTicksPerSecond() * dt;
+				m_CurrentTime2 += m_CurrentAnimation2->GetTicksPerSecond() * dt * m_CurrentAnimation->GetSpeed();
 				m_CurrentTime2 = fmod(m_CurrentTime2, m_CurrentAnimation2->GetDuration());
 			}
 

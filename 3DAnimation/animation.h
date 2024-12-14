@@ -22,7 +22,22 @@ class Animation
 public:
 	Animation() = default;
 
-	Animation(const std::string& animationPath, Model* model)
+	Animation(const std::string& animationPath, Model* model,float speed = 1.0f)
+	{
+		Assimp::Importer importer;
+		const aiScene* scene = importer.ReadFile(animationPath, aiProcess_Triangulate);
+		assert(scene && scene->mRootNode);
+		auto animation = scene->mAnimations[0];
+		m_Duration = animation->mDuration;
+		m_Speed = 1.0f;
+		m_TicksPerSecond = animation->mTicksPerSecond;
+		aiMatrix4x4 globalTransformation = scene->mRootNode->mTransformation;
+		globalTransformation = globalTransformation.Inverse();
+		ReadHierarchyData(m_RootNode, scene->mRootNode);
+		ReadMissingBones(animation, *model);
+	}
+
+	void loadAnimation(const std::string& animationPath, Model* model,float speed = 1.0f)
 	{
 		Assimp::Importer importer;
 		const aiScene* scene = importer.ReadFile(animationPath, aiProcess_Triangulate);
@@ -30,6 +45,7 @@ public:
 		auto animation = scene->mAnimations[0];
 		m_Duration = animation->mDuration;
 		m_TicksPerSecond = animation->mTicksPerSecond;
+		m_Speed = speed;
 		aiMatrix4x4 globalTransformation = scene->mRootNode->mTransformation;
 		globalTransformation = globalTransformation.Inverse();
 		ReadHierarchyData(m_RootNode, scene->mRootNode);
@@ -52,9 +68,15 @@ public:
 		else return &(*iter);
 	}
 
+	void setAnimationSpeed(float speed)
+	{
+		m_Speed = speed;
+	}
+
 	
 	inline float GetTicksPerSecond() { return m_TicksPerSecond; }
 	inline float GetDuration() { return m_Duration;}
+	inline float GetSpeed() { return m_Speed; }
 	inline const AssimpNodeData& GetRootNode() { return m_RootNode; }
 	inline const std::map<std::string,BoneInfo>& GetBoneIDMap() 
 	{ 
@@ -103,6 +125,7 @@ private:
 		}
 	}
 	float m_Duration;
+	float m_Speed;
 	int m_TicksPerSecond;
 	std::vector<Bone> m_Bones;
 	AssimpNodeData m_RootNode;
