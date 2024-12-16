@@ -11,28 +11,44 @@
 
 #include <iostream>
 
-enum AnimState {
-	IDLE = 1,
-	IDLE_PUNCH,
-	PUNCH_IDLE,
-	IDLE_KICK,
-	KICK_IDLE,
-	IDLE_BLOCK,
-	BLOCK_IDLE,
-	IDLE_WALK_FRONT,
-	IDLE_WALK_BACK,
-	WALK_FRONT_IDLE,
-	WALK_BACK_IDLE,
-	WALK_FRONT,
-	WALK_BACK
+enum AnimStateP1 {
+	P1_IDLE = 1,
+	P1_IDLE_PUNCH,
+	P1_PUNCH_IDLE,
+	P1_IDLE_KICK,
+	P1_KICK_IDLE,
+	P1_IDLE_BLOCK,
+	P1_BLOCK_IDLE,
+	P1_IDLE_WALK_FRONT,
+	P1_IDLE_WALK_BACK,
+	P1_WALK_FRONT_IDLE,
+	P1_WALK_BACK_IDLE,
+	P1_WALK_FRONT,
+	P1_WALK_BACK
+};
+
+enum AnimStateP2 {
+	P2_IDLE = 1,
+	P2_IDLE_PUNCH,
+	P2_PUNCH_IDLE,
+	P2_IDLE_KICK,
+	P2_KICK_IDLE,
+	P2_IDLE_BLOCK,
+	P2_BLOCK_IDLE,
+	P2_IDLE_WALK_FRONT,
+	P2_IDLE_WALK_BACK,
+	P2_WALK_FRONT_IDLE,
+	P2_WALK_BACK_IDLE,
+	P2_WALK_FRONT,
+	P2_WALK_BACK
 };
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void processInput(GLFWwindow* window);
-void UpdateStateP1(GLFWwindow* window, Animator& animator, AnimState& charState, float& blendAmount);
-void UpdateStateP2(GLFWwindow* window, Animator& animator, AnimState& charState, float& blendAmount);
+void UpdateStateP1(GLFWwindow* window, Animator& animator, AnimStateP1& charState, float& blendAmount);
+void UpdateStateP2(GLFWwindow* window, Animator& animator, AnimStateP2& charState, float& blendAmount);
 
 // settings
 const unsigned int SCR_WIDTH = 1000;
@@ -49,7 +65,7 @@ bool firstMouse = true;
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
 
-Model player1;
+ModelAnim player1;
 Animation idleAnimationP1;
 Animation walkFrontAnimationP1;
 Animation walkBackAnimationP1;
@@ -57,7 +73,7 @@ Animation punchAnimationP1;
 Animation kickAnimationP1;
 Animation blockAnimationP1;
 
-Model player2;
+ModelAnim player2;
 Animation idleAnimationP2;
 Animation walkFrontAnimationP2;
 Animation walkBackAnimationP2;
@@ -67,13 +83,14 @@ Animation blockAnimationP2;
 
 glm::vec3 player1Position = glm::vec3(0.0f, -0.4f, 0.0f);
 glm::vec3 player2Position = glm::vec3(0.0f, -0.4f, 3.0f);
-float moveSpeed = 0.4f;
+float moveSpeed = 0.5f;
 
 Animator player1_animator(&idleAnimationP1);
 Animator player2_animator(&idleAnimationP2);
-enum AnimState P1charState = IDLE;
-enum AnimState P2charState = IDLE;
-float blendAmount = 0.0f;
+enum AnimStateP1 P1charState = P1_IDLE;
+enum AnimStateP2 P2charState = P2_IDLE;
+float blendAmountP1 = 0.0f;
+float blendAmountP2 = 0.0f;
 float blendRate = 0.055f;
 
 
@@ -132,20 +149,20 @@ int main()
 	// idle 3.3, walk 2.06, run 0.83, punch 1.03, kick 1.6
 	
 	player1.loadModel("Object/Vegas/Big Vegas.dae");
-	idleAnimationP1.loadAnimation("Object/Vegas/Fight Idle.dae", &player1);
-	walkFrontAnimationP1.loadAnimation("Object/Vegas/WalkForward.dae", &player1,1.5f);
+	idleAnimationP1.loadAnimation("Object/Vegas/Idle.dae", &player1);
+	walkFrontAnimationP1.loadAnimation("Object/Vegas/WalkForward.dae", &player1,1.8f);
 	walkBackAnimationP1.loadAnimation("Object/Vegas/WalkBack.dae", &player1,1.5f);
-	punchAnimationP1.loadAnimation("Object/Vegas/Punching.dae", &player1,1.5f);
-	kickAnimationP1.loadAnimation("Object/Vegas/Kicking.dae", &player1,1.2f);
+	punchAnimationP1.loadAnimation("Object/Vegas/Punch Combo.dae", &player1,1.5f);
+	kickAnimationP1.loadAnimation("Object/Vegas/Kicking.dae", &player1,1.5f);
 	blockAnimationP1.loadAnimation("Object/Vegas/Bouncing Fight Idle.dae", &player1,1.2f);
 
 	player2.loadModel("Object/Wrestler/Ch43_nonPBR.dae");
 	idleAnimationP2.loadAnimation("Object/Wrestler/Idle.dae", &player2);
-	walkFrontAnimationP2.loadAnimation("Object/Wrestler/Walking.dae", &player2, 1.0f);
-	walkBackAnimationP2.loadAnimation("Object/Wrestler/Step Backward.dae", &player2, 1.5f);
-	punchAnimationP2.loadAnimation("Object/Wrestler/Cross Punch.dae", &player2, 1.5f);
-	kickAnimationP2.loadAnimation("Object/Wrestler/Mma Kick.dae", &player2, 1.2f);
-	blockAnimationP2.loadAnimation("Object/Wrestler/Center Block.dae", &player2, 1.2f);
+	walkFrontAnimationP2.loadAnimation("Object/Wrestler/Walking.dae", &player2, 1.5f);
+	walkBackAnimationP2.loadAnimation("Object/Wrestler/Standing Walk Back.dae", &player2, 1.7f);
+	punchAnimationP2.loadAnimation("Object/Wrestler/Cross Punch.dae", &player2, 1.7f);
+	kickAnimationP2.loadAnimation("Object/Wrestler/Mma Kick.dae", &player2, 1.8f);
+	blockAnimationP2.loadAnimation("Object/Wrestler/Center Block.dae", &player2, 1.5f);
 
 
 	camera.Yaw = -1.000028f;
@@ -172,8 +189,8 @@ int main()
 			glfwSetWindowShouldClose(window, true);
 
 
-		UpdateStateP1(window, player1_animator, P1charState, blendAmount);
-		UpdateStateP2(window, player2_animator, P2charState, blendAmount);
+		UpdateStateP1(window, player1_animator, P1charState, blendAmountP1);
+		UpdateStateP2(window, player2_animator, P2charState, blendAmountP2);
 
 
 		player1_animator.UpdateAnimation(deltaTime);
@@ -199,7 +216,7 @@ int main()
 		ourShader.setMat4("view", view);
 		glm::mat4 modelP1 = glm::mat4(1.0f);
 		modelP1 = glm::translate(modelP1, player1Position);
-		modelP1 = glm::scale(modelP1, glm::vec3(.5f, .5f, .5f));
+		modelP1 = glm::scale(modelP1, glm::vec3(.55f, .55f, .55f));
 		ourShader.setMat4("model", modelP1);
 
 		auto transformsP1 = player1_animator.GetFinalBoneMatrices();
@@ -311,42 +328,42 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 }
 
 
-void UpdateStateP1(GLFWwindow* window, Animator& animator, AnimState& charState, float& blendAmount)
+void UpdateStateP1(GLFWwindow* window, Animator& animator, AnimStateP1& charState, float& blendAmount)
 {
 	switch (charState) {
-	case IDLE:
+	case P1_IDLE:
 		if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
 			blendAmount = 0.0f;
 			player1Position.z += moveSpeed * deltaTime;
 			animator.PlayAnimation(&idleAnimationP1, &walkFrontAnimationP1, animator.m_CurrentTime, 0.0f, blendAmount);
-			charState = IDLE_WALK_FRONT;
+			charState = P1_IDLE_WALK_FRONT;
 		}
 		else if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
 			blendAmount = 0.0f;
 			player1Position.z -= moveSpeed * deltaTime;
 			animator.PlayAnimation(&idleAnimationP1, &walkBackAnimationP1, animator.m_CurrentTime, 0.0f, blendAmount);
-			charState = IDLE_WALK_BACK;
+			charState = P1_IDLE_WALK_BACK;
 		}
 
 
 		if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
 			blendAmount = 0.0f;
 			animator.PlayAnimation(&idleAnimationP1, &blockAnimationP1, animator.m_CurrentTime, 0.0f, blendAmount);
-			charState = IDLE_BLOCK;
+			charState = P1_IDLE_BLOCK;
 		}
 		if (glfwGetKey(window, GLFW_KEY_V) == GLFW_PRESS) {
 			blendAmount = 0.0f;
 			animator.PlayAnimation(&idleAnimationP1, &punchAnimationP1, animator.m_CurrentTime, 0.0f, blendAmount);
-			charState = IDLE_PUNCH;
+			charState = P1_IDLE_PUNCH;
 		}
 		if (glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS) {
 			blendAmount = 0.0f;
 			animator.PlayAnimation(&idleAnimationP1, &kickAnimationP1, animator.m_CurrentTime, 0.0f, blendAmount);
-			charState = IDLE_KICK;
+			charState = P1_IDLE_KICK;
 		}
 		//printf("idle \n");
 		break;
-	case IDLE_WALK_FRONT:
+	case P1_IDLE_WALK_FRONT:
 		player1Position.z += moveSpeed * deltaTime;
 		blendAmount += blendRate;
 		blendAmount = fmod(blendAmount, 1.0f);
@@ -355,11 +372,11 @@ void UpdateStateP1(GLFWwindow* window, Animator& animator, AnimState& charState,
 			blendAmount = 0.0f;
 			float startTime = animator.m_CurrentTime2;
 			animator.PlayAnimation(&walkFrontAnimationP1, NULL, startTime, 0.0f, blendAmount);
-			charState = WALK_FRONT;
+			charState = P1_WALK_FRONT;
 		}
 		//printf("idle_walk_front \n");
 		break;
-	case IDLE_WALK_BACK:
+	case P1_IDLE_WALK_BACK:
 		player1Position.z -= moveSpeed * deltaTime;
 		blendAmount += blendRate;
 		blendAmount = fmod(blendAmount, 1.0f);
@@ -368,29 +385,29 @@ void UpdateStateP1(GLFWwindow* window, Animator& animator, AnimState& charState,
 			blendAmount = 0.0f;
 			float startTime = animator.m_CurrentTime2;
 			animator.PlayAnimation(&walkBackAnimationP1, NULL, startTime, 0.0f, blendAmount);
-			charState = WALK_BACK;
+			charState = P1_WALK_BACK;
 		}
 		//printf("idle_walk_back \n");
 		break;
-	case WALK_FRONT:
+	case P1_WALK_FRONT:
 		player1Position.z += moveSpeed * deltaTime;
 		animator.PlayAnimation(&walkFrontAnimationP1, NULL, animator.m_CurrentTime, animator.m_CurrentTime2, blendAmount);
 		if (glfwGetKey(window, GLFW_KEY_D) != GLFW_PRESS) {
-			charState = WALK_FRONT_IDLE;
+			charState = P1_WALK_FRONT_IDLE;
 
 		}
 		//printf("walking_front\n");
 		break;
-	case WALK_BACK:
+	case P1_WALK_BACK:
 		player1Position.z -= moveSpeed * deltaTime;
 		animator.PlayAnimation(&walkBackAnimationP1, NULL, animator.m_CurrentTime, animator.m_CurrentTime2, blendAmount);
 		if (glfwGetKey(window, GLFW_KEY_A) != GLFW_PRESS) {
-			charState = WALK_BACK_IDLE;
+			charState = P1_WALK_BACK_IDLE;
 
 		}
 		//printf("walking_back\n");
 		break;
-	case WALK_FRONT_IDLE:
+	case P1_WALK_FRONT_IDLE:
 		blendAmount += blendRate;
 		blendAmount = fmod(blendAmount, 1.0f);
 		animator.PlayAnimation(&walkFrontAnimationP1, &idleAnimationP1, animator.m_CurrentTime, animator.m_CurrentTime2, blendAmount);
@@ -398,11 +415,11 @@ void UpdateStateP1(GLFWwindow* window, Animator& animator, AnimState& charState,
 			blendAmount = 0.0f;
 			float startTime = animator.m_CurrentTime2;
 			animator.PlayAnimation(&idleAnimationP1, NULL, startTime, 0.0f, blendAmount);
-			charState = IDLE;
+			charState = P1_IDLE;
 		}
 		//printf("walk_front_idle \n");
 		break;
-	case WALK_BACK_IDLE:
+	case P1_WALK_BACK_IDLE:
 		blendAmount += blendRate;
 		blendAmount = fmod(blendAmount, 1.0f);
 		animator.PlayAnimation(&walkBackAnimationP1, &idleAnimationP1, animator.m_CurrentTime, animator.m_CurrentTime2, blendAmount);
@@ -410,11 +427,11 @@ void UpdateStateP1(GLFWwindow* window, Animator& animator, AnimState& charState,
 			blendAmount = 0.0f;
 			float startTime = animator.m_CurrentTime2;
 			animator.PlayAnimation(&idleAnimationP1, NULL, startTime, 0.0f, blendAmount);
-			charState = IDLE;
+			charState = P1_IDLE;
 		}
 		//printf("walk_back_idle \n");
 		break;
-	case IDLE_PUNCH:
+	case P1_IDLE_PUNCH:
 		blendAmount += blendRate;
 		blendAmount = fmod(blendAmount, 1.0f);
 		animator.PlayAnimation(&idleAnimationP1, &punchAnimationP1, animator.m_CurrentTime, animator.m_CurrentTime2, blendAmount);
@@ -422,12 +439,12 @@ void UpdateStateP1(GLFWwindow* window, Animator& animator, AnimState& charState,
 			blendAmount = 0.0f;
 			float startTime = animator.m_CurrentTime2;
 			animator.PlayAnimation(&punchAnimationP1, NULL, startTime, 0.0f, blendAmount);
-			charState = PUNCH_IDLE;
+			charState = P1_PUNCH_IDLE;
 		}
 		//printf("idle_punch\n");
 		break;
-	case PUNCH_IDLE:
-		if (animator.m_CurrentTime > 0.6 * punchAnimationP1.GetDuration()) {
+	case P1_PUNCH_IDLE:
+		if (animator.m_CurrentTime > 0.6 * (punchAnimationP1.GetDuration() * 1.0f)) {
 			blendAmount += blendRate;
 			blendAmount = fmod(blendAmount, 1.0f);
 			animator.PlayAnimation(&punchAnimationP1, &idleAnimationP1, animator.m_CurrentTime, animator.m_CurrentTime2, blendAmount);
@@ -435,7 +452,7 @@ void UpdateStateP1(GLFWwindow* window, Animator& animator, AnimState& charState,
 				blendAmount = 0.0f;
 				float startTime = animator.m_CurrentTime2;
 				animator.PlayAnimation(&idleAnimationP1, NULL, startTime, 0.0f, blendAmount);
-				charState = IDLE;
+				charState = P1_IDLE;
 			}
 			//printf("punch_idle \n");
 		}
@@ -444,7 +461,7 @@ void UpdateStateP1(GLFWwindow* window, Animator& animator, AnimState& charState,
 			//printf("punching \n");
 		}
 		break;
-	case IDLE_KICK:
+	case P1_IDLE_KICK:
 		blendAmount += blendRate;
 		blendAmount = fmod(blendAmount, 1.0f);
 		animator.PlayAnimation(&idleAnimationP1, &kickAnimationP1, animator.m_CurrentTime, animator.m_CurrentTime2, blendAmount);
@@ -452,20 +469,20 @@ void UpdateStateP1(GLFWwindow* window, Animator& animator, AnimState& charState,
 			blendAmount = 0.0f;
 			float startTime = animator.m_CurrentTime2;
 			animator.PlayAnimation(&kickAnimationP1, NULL, startTime, 0.0f, blendAmount);
-			charState = KICK_IDLE;
+			charState = P1_KICK_IDLE;
 		}
 		//printf("idle_kick\n");
 		break;
-	case KICK_IDLE:
+	case P1_KICK_IDLE:
 		if (animator.m_CurrentTime > 0.7f * kickAnimationP1.GetDuration()) {
 			blendAmount += blendRate;
 			blendAmount = fmod(blendAmount, 1.0f);
 			animator.PlayAnimation(&kickAnimationP1, &idleAnimationP1, animator.m_CurrentTime, animator.m_CurrentTime2, blendAmount);
-			if (blendAmount > 0.9f) {
+			if (blendAmount > 0.7f) {
 				blendAmount = 0.0f;
 				float startTime = animator.m_CurrentTime2;
 				animator.PlayAnimation(&idleAnimationP1, NULL, startTime, 0.0f, blendAmount);
-				charState = IDLE;
+				charState = P1_IDLE;
 			}
 			//printf("kick_idle \n");
 		}
@@ -474,7 +491,7 @@ void UpdateStateP1(GLFWwindow* window, Animator& animator, AnimState& charState,
 			//printf("kicking \n");
 		}
 		break;
-	case IDLE_BLOCK:
+	case P1_IDLE_BLOCK:
 		blendAmount += blendRate;
 		blendAmount = fmod(blendAmount, 1.0f);
 		animator.PlayAnimation(&idleAnimationP1, &blockAnimationP1, animator.m_CurrentTime, animator.m_CurrentTime2, blendAmount);
@@ -482,11 +499,11 @@ void UpdateStateP1(GLFWwindow* window, Animator& animator, AnimState& charState,
 			blendAmount = 0.0f;
 			float startTime = animator.m_CurrentTime2;
 			animator.PlayAnimation(&blockAnimationP1, NULL, startTime, 0.0f, blendAmount);
-			charState = BLOCK_IDLE;
+			charState = P1_BLOCK_IDLE;
 		}
 		//printf("idle_block\n");
 		break;
-	case BLOCK_IDLE:
+	case P1_BLOCK_IDLE:
 		if (animator.m_CurrentTime > 0.7f * (blockAnimationP1.GetDuration() * 0.5f)) {
 			blendAmount += blendRate;
 			blendAmount = fmod(blendAmount, 1.0f);
@@ -495,7 +512,7 @@ void UpdateStateP1(GLFWwindow* window, Animator& animator, AnimState& charState,
 				blendAmount = 0.0f;
 				float startTime = animator.m_CurrentTime2;
 				animator.PlayAnimation(&idleAnimationP1, NULL, startTime, 0.0f, blendAmount);
-				charState = IDLE;
+				charState = P1_IDLE;
 			}
 			//printf("block_idle \n");
 		}
@@ -508,43 +525,43 @@ void UpdateStateP1(GLFWwindow* window, Animator& animator, AnimState& charState,
 }
 
 
-	void UpdateStateP2(GLFWwindow* window, Animator& animator, AnimState& charState, float& blendAmount)
+	void UpdateStateP2(GLFWwindow* window, Animator& animator, AnimStateP2& charState, float& blendAmount)
 	{
 		switch (charState) {
-		case IDLE:
+		case P2_IDLE:
 			if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) {
 				blendAmount = 0.0f;
 				player2Position.z -= moveSpeed * deltaTime;
 				animator.PlayAnimation(&idleAnimationP2, &walkFrontAnimationP2, animator.m_CurrentTime, 0.0f, blendAmount);
-				charState = IDLE_WALK_FRONT;
+				charState = P2_IDLE_WALK_FRONT;
 			}
 			else if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
 				blendAmount = 0.0f;
 				player2Position.z += moveSpeed * deltaTime;
 				animator.PlayAnimation(&idleAnimationP2, &walkBackAnimationP2, animator.m_CurrentTime, 0.0f, blendAmount);
-				charState = IDLE_WALK_BACK;
+				charState = P2_IDLE_WALK_BACK;
 			}
 
 
 			if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
 				blendAmount = 0.0f;
 				animator.PlayAnimation(&idleAnimationP2, &blockAnimationP2, animator.m_CurrentTime, 0.0f, blendAmount);
-				charState = IDLE_BLOCK;
+				charState = P2_IDLE_BLOCK;
 			}
 			if (glfwGetKey(window, GLFW_KEY_KP_1) == GLFW_PRESS) {
 				blendAmount = 0.0f;
 				animator.PlayAnimation(&idleAnimationP2, &punchAnimationP2, animator.m_CurrentTime, 0.0f, blendAmount);
-				charState = IDLE_PUNCH;
+				charState = P2_IDLE_PUNCH;
 			}
 			if (glfwGetKey(window, GLFW_KEY_KP_2) == GLFW_PRESS) {
 				blendAmount = 0.0f;
 				animator.PlayAnimation(&idleAnimationP2, &kickAnimationP2, animator.m_CurrentTime, 0.0f, blendAmount);
-				charState = IDLE_KICK;
+				charState = P2_IDLE_KICK;
 			}
-			printf("idle \n");
+			//printf("idle \n");
 			break;
-		case IDLE_WALK_FRONT:
-			player2Position.z += moveSpeed * deltaTime;
+		case  P2_IDLE_WALK_FRONT:
+			player2Position.z -= moveSpeed * deltaTime;
 			blendAmount += blendRate;
 			blendAmount = fmod(blendAmount, 1.0f);
 			animator.PlayAnimation(&idleAnimationP2, &walkFrontAnimationP2, animator.m_CurrentTime, animator.m_CurrentTime2, blendAmount);
@@ -552,54 +569,54 @@ void UpdateStateP1(GLFWwindow* window, Animator& animator, AnimState& charState,
 				blendAmount = 0.0f;
 				float startTime = animator.m_CurrentTime2;
 				animator.PlayAnimation(&walkFrontAnimationP2, NULL, startTime, 0.0f, blendAmount);
-				charState = WALK_FRONT;
+				charState = P2_WALK_FRONT;
 			}
-			printf("idle_walk_front \n");
+			//printf("idle_walk_front \n");
 			break;
-		case IDLE_WALK_BACK:
-			player2Position.z -= moveSpeed * deltaTime;
+		case  P2_IDLE_WALK_BACK:
+			player2Position.z += moveSpeed * deltaTime;
 			blendAmount += blendRate;
 			blendAmount = fmod(blendAmount, 1.0f);
 			animator.PlayAnimation(&idleAnimationP2, &walkBackAnimationP2, animator.m_CurrentTime, animator.m_CurrentTime2, blendAmount);
-			if (blendAmount > 0.9f) {
+			if (blendAmount > 0.8f) {
 				blendAmount = 0.0f;
 				float startTime = animator.m_CurrentTime2;
 				animator.PlayAnimation(&walkBackAnimationP2, NULL, startTime, 0.0f, blendAmount);
-				charState = WALK_BACK;
+				charState = P2_WALK_BACK;
 			}
-			printf("idle_walk_back \n");
+			//printf("idle_walk_back \n");
 			break;
-		case WALK_FRONT:
+		case  P2_WALK_FRONT:
 			player2Position.z -= moveSpeed * deltaTime;
 			animator.PlayAnimation(&walkFrontAnimationP2, NULL, animator.m_CurrentTime, animator.m_CurrentTime2, blendAmount);
 			if (glfwGetKey(window, GLFW_KEY_LEFT) != GLFW_PRESS) {
-				charState = WALK_FRONT_IDLE;
+				charState = P2_WALK_FRONT_IDLE;
 
 			}
-			printf("walking_front\n");
+			//printf("walking_front\n");
 			break;
-		case WALK_BACK:
+		case  P2_WALK_BACK:
 			player2Position.z += moveSpeed * deltaTime;
 			animator.PlayAnimation(&walkBackAnimationP2, NULL, animator.m_CurrentTime, animator.m_CurrentTime2, blendAmount);
 			if (glfwGetKey(window, GLFW_KEY_RIGHT) != GLFW_PRESS) {
-				charState = WALK_BACK_IDLE;
+				charState = P2_WALK_BACK_IDLE;
 
 			}
-			printf("walking_back\n");
+			//printf("walking_back\n");
 			break;
-		case WALK_FRONT_IDLE:
+		case  P2_WALK_FRONT_IDLE:
 			blendAmount += blendRate;
 			blendAmount = fmod(blendAmount, 1.0f);
 			animator.PlayAnimation(&walkFrontAnimationP2, &idleAnimationP2, animator.m_CurrentTime, animator.m_CurrentTime2, blendAmount);
-			if (blendAmount > 0.9f) {
+			if (blendAmount > 0.8f) {
 				blendAmount = 0.0f;
 				float startTime = animator.m_CurrentTime2;
 				animator.PlayAnimation(&idleAnimationP2, NULL, startTime, 0.0f, blendAmount);
-				charState = IDLE;
+				charState = P2_IDLE;
 			}
-			printf("walk_front_idle \n");
+			//printf("walk_front_idle \n");
 			break;
-		case WALK_BACK_IDLE:
+		case  P2_WALK_BACK_IDLE:
 			blendAmount += blendRate;
 			blendAmount = fmod(blendAmount, 1.0f);
 			animator.PlayAnimation(&walkBackAnimationP2, &idleAnimationP2, animator.m_CurrentTime, animator.m_CurrentTime2, blendAmount);
@@ -607,41 +624,41 @@ void UpdateStateP1(GLFWwindow* window, Animator& animator, AnimState& charState,
 				blendAmount = 0.0f;
 				float startTime = animator.m_CurrentTime2;
 				animator.PlayAnimation(&idleAnimationP2, NULL, startTime, 0.0f, blendAmount);
-				charState = IDLE;
+				charState = P2_IDLE;
 			}
-			printf("walk_back_idle \n");
+			//printf("walk_back_idle \n");
 			break;
-		case IDLE_PUNCH:
+		case  P2_IDLE_PUNCH:
 			blendAmount += blendRate;
 			blendAmount = fmod(blendAmount, 1.0f);
 			animator.PlayAnimation(&idleAnimationP2, &punchAnimationP2, animator.m_CurrentTime, animator.m_CurrentTime2, blendAmount);
-			if (blendAmount > 0.9f) {
+			if (blendAmount > 0.8f) {
 				blendAmount = 0.0f;
 				float startTime = animator.m_CurrentTime2;
 				animator.PlayAnimation(&punchAnimationP2, NULL, startTime, 0.0f, blendAmount);
-				charState = PUNCH_IDLE;
+				charState = P2_PUNCH_IDLE;
 			}
-			printf("idle_punch\n");
+			//printf("idle_punch\n");
 			break;
-		case PUNCH_IDLE:
-			if (animator.m_CurrentTime > 0.6 * punchAnimationP2.GetDuration()) {
+		case  P2_PUNCH_IDLE:
+			if (animator.m_CurrentTime > 0.65 * punchAnimationP2.GetDuration()) {
 				blendAmount += blendRate;
 				blendAmount = fmod(blendAmount, 1.0f);
 				animator.PlayAnimation(&punchAnimationP2, &idleAnimationP2, animator.m_CurrentTime, animator.m_CurrentTime2, blendAmount);
-				if (blendAmount > 0.8f) {
+				if (blendAmount > 0.7f) {
 					blendAmount = 0.0f;
 					float startTime = animator.m_CurrentTime2;
 					animator.PlayAnimation(&idleAnimationP2, NULL, startTime, 0.0f, blendAmount);
-					charState = IDLE;
+					charState = P2_IDLE;
 				}
-				printf("punch_idle \n");
+				//printf("punch_idle \n");
 			}
 			else {
 				// punching
-				printf("punching \n");
+				//printf("punching \n");
 			}
 			break;
-		case IDLE_KICK:
+		case  P2_IDLE_KICK:
 			blendAmount += blendRate;
 			blendAmount = fmod(blendAmount, 1.0f);
 			animator.PlayAnimation(&idleAnimationP2, &kickAnimationP2, animator.m_CurrentTime, animator.m_CurrentTime2, blendAmount);
@@ -649,29 +666,29 @@ void UpdateStateP1(GLFWwindow* window, Animator& animator, AnimState& charState,
 				blendAmount = 0.0f;
 				float startTime = animator.m_CurrentTime2;
 				animator.PlayAnimation(&kickAnimationP2, NULL, startTime, 0.0f, blendAmount);
-				charState = KICK_IDLE;
+				charState = P2_KICK_IDLE;
 			}
-			printf("idle_kick\n");
+			//printf("idle_kick\n");
 			break;
-		case KICK_IDLE:
-			if (animator.m_CurrentTime > 0.7f * kickAnimationP2.GetDuration()) {
+		case  P2_KICK_IDLE:
+			if (animator.m_CurrentTime > 0.6f * kickAnimationP2.GetDuration()) {
 				blendAmount += blendRate;
 				blendAmount = fmod(blendAmount, 1.0f);
 				animator.PlayAnimation(&kickAnimationP2, &idleAnimationP2, animator.m_CurrentTime, animator.m_CurrentTime2, blendAmount);
-				if (blendAmount > 0.9f) {
+				if (blendAmount > 0.7f) {
 					blendAmount = 0.0f;
 					float startTime = animator.m_CurrentTime2;
 					animator.PlayAnimation(&idleAnimationP2, NULL, startTime, 0.0f, blendAmount);
-					charState = IDLE;
+					charState = P2_IDLE;
 				}
-				printf("kick_idle \n");
+				//printf("kick_idle \n");
 			}
 			else {
 				// punching
-				printf("kicking \n");
+				//printf("kicking \n");
 			}
 			break;
-		case IDLE_BLOCK:
+		case  P2_IDLE_BLOCK:
 			blendAmount += blendRate;
 			blendAmount = fmod(blendAmount, 1.0f);
 			animator.PlayAnimation(&idleAnimationP2, &blockAnimationP2, animator.m_CurrentTime, animator.m_CurrentTime2, blendAmount);
@@ -679,11 +696,11 @@ void UpdateStateP1(GLFWwindow* window, Animator& animator, AnimState& charState,
 				blendAmount = 0.0f;
 				float startTime = animator.m_CurrentTime2;
 				animator.PlayAnimation(&blockAnimationP2, NULL, startTime, 0.0f, blendAmount);
-				charState = BLOCK_IDLE;
+				charState = P2_BLOCK_IDLE;
 			}
-			printf("idle_block\n");
+			//printf("idle_block\n");
 			break;
-		case BLOCK_IDLE:
+		case  P2_BLOCK_IDLE:
 			if (animator.m_CurrentTime > 0.7f * (blockAnimationP2.GetDuration() * 0.5f)) {
 				blendAmount += blendRate;
 				blendAmount = fmod(blendAmount, 1.0f);
@@ -692,13 +709,13 @@ void UpdateStateP1(GLFWwindow* window, Animator& animator, AnimState& charState,
 					blendAmount = 0.0f;
 					float startTime = animator.m_CurrentTime2;
 					animator.PlayAnimation(&idleAnimationP2, NULL, startTime, 0.0f, blendAmount);
-					charState = IDLE;
+					charState = P2_IDLE;
 				}
-				printf("block_idle \n");
+				//printf("block_idle \n");
 			}
 			else {
 				// punching
-				printf("blocking \n");
+				//printf("blocking \n");
 			}
 			break;
 		}

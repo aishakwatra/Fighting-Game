@@ -1,5 +1,5 @@
-#ifndef MODEL_H
-#define MODEL_H
+#ifndef MODELANIM_H
+#define MODELANIM_H
 
 #include <glad/glad.h> 
 
@@ -24,7 +24,7 @@
 
 using namespace std;
 
-class Model 
+class ModelAnim 
 {
 public:
     // model data 
@@ -33,11 +33,11 @@ public:
     string directory;
     bool gammaCorrection;
 	
-	Model() = default;
+	ModelAnim() = default;
 	
 
     // constructor, expects a filepath to a 3D model.
-    Model(string const &path, bool gamma = false) : gammaCorrection(gamma)
+    ModelAnim(string const &path, bool gamma = false) : gammaCorrection(gamma)
     {
         loadModel(path);
     }

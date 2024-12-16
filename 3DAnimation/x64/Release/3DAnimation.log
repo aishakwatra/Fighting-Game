@@ -1,0 +1,2 @@
+﻿  3DAnimation.cpp
+C:\Capt\Fighting-Game\3DAnimation\3DAnimation.cpp(1,10): error C1083: Cannot open include file: 'glad/glad.h': No such file or directory

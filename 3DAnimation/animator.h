@@ -33,12 +33,12 @@ public:
 		m_DeltaTime = dt;
 		if (m_CurrentAnimation)
 		{
-			m_CurrentTime += m_CurrentAnimation->GetTicksPerSecond() * dt * m_CurrentAnimation->GetSpeed();
+			m_CurrentTime += (m_CurrentAnimation->GetTicksPerSecond() * m_CurrentAnimation->GetSpeed()) * dt ;
 			m_CurrentTime = fmod(m_CurrentTime, m_CurrentAnimation->GetDuration());
 
 			if (m_CurrentAnimation2)
 			{
-				m_CurrentTime2 += m_CurrentAnimation2->GetTicksPerSecond() * dt * m_CurrentAnimation->GetSpeed();
+				m_CurrentTime2 += (m_CurrentAnimation2->GetTicksPerSecond() * m_CurrentAnimation2->GetSpeed())  * dt;
 				m_CurrentTime2 = fmod(m_CurrentTime2, m_CurrentAnimation2->GetDuration());
 			}
 
@@ -53,6 +53,7 @@ public:
 		m_CurrentAnimation2 = pAnimation2;
 		m_CurrentTime2 = time2;
 		m_blendAmount = blend;
+
 	}
 
 	glm::mat4 UpdateBlend(Bone* Bone1, Bone* Bone2) {
@@ -121,6 +122,7 @@ public:
 		return m_FinalBoneMatrices;
 	}
 
+
 	//private:
 	std::vector<glm::mat4> m_FinalBoneMatrices;
 	Animation* m_CurrentAnimation;
@@ -129,5 +131,6 @@ public:
 	float m_CurrentTime2;
 	float m_DeltaTime;
 	float m_blendAmount;
+	float m_speed;
 
 };

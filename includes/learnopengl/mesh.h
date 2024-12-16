@@ -1,5 +1,5 @@
-#ifndef MESH_H
-#define MESH_H
+#ifndef ANIMMESH_H
+#define ANIMMESH_H
 
 #include <glad/glad.h> // holds all OpenGL type declarations
 
@@ -91,6 +91,35 @@ public:
         glBindVertexArray(0);
 
         // always good practice to set everything back to defaults once configured.
+        glActiveTexture(GL_TEXTURE0);
+    }
+
+    void DrawPBR(Shader& shader) {
+        unsigned int albedoNr = 1, normalNr = 1, metallicNr = 1, roughnessNr = 1, aoNr = 1;
+
+        for (unsigned int i = 0; i < textures.size(); i++) {
+            glActiveTexture(GL_TEXTURE0 + i + 3);
+            string name = textures[i].type;
+            string number;
+
+            if (name == "texture_albedo")
+                number = std::to_string(albedoNr++);
+            else if (name == "texture_normal")
+                number = std::to_string(normalNr++);
+            else if (name == "texture_metallic")
+                number = std::to_string(metallicNr++);
+            else if (name == "texture_roughness")
+                number = std::to_string(roughnessNr++);
+            else if (name == "texture_ao")
+                number = std::to_string(aoNr++);
+
+            shader.setInt(name + number, i + 3);
+            glBindTexture(GL_TEXTURE_2D, textures[i].id);
+        }
+
+        glBindVertexArray(VAO);
+        glDrawElements(GL_TRIANGLES, static_cast<unsigned int>(indices.size()), GL_UNSIGNED_INT, 0);
+        glBindVertexArray(0);
         glActiveTexture(GL_TEXTURE0);
     }
 

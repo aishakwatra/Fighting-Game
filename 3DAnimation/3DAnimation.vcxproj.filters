@@ -41,12 +41,15 @@
     <ClInclude Include="shader_m.h">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="model.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="anim_model.fs">
+    <None Include="Shaders\anim_model.fs">
       <Filter>Source Files</Filter>
     </None>
-    <None Include="anim_model.vs">
+    <None Include="Shaders\anim_model.vs">
       <Filter>Source Files</Filter>
     </None>
   </ItemGroup>
