@@ -122,6 +122,29 @@ public:
 		return m_FinalBoneMatrices;
 	}
 
+	Animation* getCurrentAnimation() const {
+		return m_CurrentAnimation;
+	}
+
+	// Getter for the secondary animation
+	Animation* getCurrentAnimation2() const {
+		return m_CurrentAnimation2;
+	}
+
+	// Getter for the current time of the primary animation
+	float getCurrentTime() const {
+		return m_CurrentTime;
+	}
+
+	// Getter for the current time of the secondary animation
+	float getCurrentTime2() const {
+		return m_CurrentTime2;
+	}
+
+	// Getter for the blend amount
+	float getBlendAmount() const {
+		return m_blendAmount;
+	}
 
 	//private:
 	std::vector<glm::mat4> m_FinalBoneMatrices;

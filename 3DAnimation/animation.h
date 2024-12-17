@@ -17,6 +17,12 @@ struct AssimpNodeData
 	std::vector<AssimpNodeData> children;
 };
 
+struct DamageKeyframe {
+	float time;
+	int damage;
+};
+
+
 class Animation
 {
 public:
@@ -37,15 +43,42 @@ public:
 		ReadMissingBones(animation, *model);
 	}
 
+	void AddDamageKeyframe(float timeInSeconds, int damage) {
+		if (m_TicksPerSecond > 0) {
+			float timeInTicks = timeInSeconds * m_TicksPerSecond; // Convert seconds to ticks if needed
+			damageKeyframes.push_back({ timeInTicks, damage });
+			cout << "Added damage keyframe at time " << timeInTicks << " ticks" << endl;
+		}
+		else {
+			// Directly use seconds if TicksPerSecond is not defined or irrelevant
+			damageKeyframes.push_back({ timeInSeconds, damage });
+		}
+	}
+
+	int getDamageForTime(float currentTimeInSeconds) {
+		float tolerance = 0.05f; // This may need adjustment based on your specific timing precision
+		for (const auto& frame : damageKeyframes) {
+			if (std::abs(currentTimeInSeconds - frame.time) <= tolerance) {
+				return frame.damage;
+			}
+		}
+		return 0;
+	}
+
+
 	void loadAnimation(const std::string& animationPath, ModelAnim* model,float speed = 1.0f)
 	{
 		Assimp::Importer importer;
 		const aiScene* scene = importer.ReadFile(animationPath, aiProcess_Triangulate);
 		assert(scene && scene->mRootNode);
-		auto animation = scene->mAnimations[0];
+		auto animation = scene->mAnimations[0];  // Assuming first animation is what we need
+
 		m_Duration = animation->mDuration;
-		m_TicksPerSecond = animation->mTicksPerSecond;
 		m_Speed = speed;
+		m_TicksPerSecond = animation->mTicksPerSecond != 0 ? animation->mTicksPerSecond : 25.0f;  // Default to 25 if not specified
+
+		std::cout << "Loaded Animation: " << animationPath << " with duration: " << m_Duration << " and ticks per second: " << m_TicksPerSecond << std::endl;
+
 		aiMatrix4x4 globalTransformation = scene->mRootNode->mTransformation;
 		globalTransformation = globalTransformation.Inverse();
 		ReadHierarchyData(m_RootNode, scene->mRootNode);
@@ -72,6 +105,7 @@ public:
 	{
 		m_Speed = speed;
 	}
+
 
 	
 	inline float GetTicksPerSecond() { return m_TicksPerSecond; }
@@ -127,8 +161,10 @@ private:
 	float m_Duration;
 	float m_Speed;
 	int m_TicksPerSecond;
+	float currentDuration;
 	std::vector<Bone> m_Bones;
 	AssimpNodeData m_RootNode;
 	std::map<std::string, BoneInfo> m_BoneInfoMap;
+	std::vector<DamageKeyframe> damageKeyframes;
 };
 

@@ -43,6 +43,20 @@ enum AnimStateP2 {
 	P2_WALK_BACK
 };
 
+struct Capsule {
+	glm::vec3 pointA;  // Top center of the capsule
+	glm::vec3 pointB;  // Bottom center of the capsule
+	float radius;
+};
+
+Capsule player1Capsule;
+Capsule player2Capsule;
+
+int player1Health = 150;
+int player2Health = 150;
+
+
+
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
@@ -84,7 +98,10 @@ Animation blockAnimationP2;
 glm::vec3 player1Position = glm::vec3(0.0f, -0.4f, 0.0f);
 glm::vec3 player2Position = glm::vec3(0.0f, -0.4f, 3.0f);
 float moveSpeed = 0.5f;
-
+int P1punchDamage = 1;
+int P1KickDamage = 2;
+int P2punchDamage = 3;
+int P2KickDamage = 4;
 Animator player1_animator(&idleAnimationP1);
 Animator player2_animator(&idleAnimationP2);
 enum AnimStateP1 P1charState = P1_IDLE;
@@ -92,6 +109,151 @@ enum AnimStateP2 P2charState = P2_IDLE;
 float blendAmountP1 = 0.0f;
 float blendAmountP2 = 0.0f;
 float blendRate = 0.055f;
+
+void updateCapsules() {
+	// Adjust these values based on the character's current pose and animation
+	player1Capsule.pointA = player1Position + glm::vec3(0.0f, 1.2f, 0.0f); // example values
+	player1Capsule.pointB = player1Position + glm::vec3(0.0f, 0.4f, 0.0f);
+	player1Capsule.radius = 0.4f;
+
+	player2Capsule.pointA = player2Position + glm::vec3(0.0f, 1.2f, 0.0f);
+	player2Capsule.pointB = player2Position + glm::vec3(0.0f, 0.4f, 0.0f);
+	player2Capsule.radius = 0.4f;
+}
+
+float segmentSegmentDistance(const glm::vec3& p1, const glm::vec3& p2, const glm::vec3& q1, const glm::vec3& q2) {
+	glm::vec3 u = p2 - p1;
+	glm::vec3 v = q2 - q1;
+	glm::vec3 w = p1 - q1;
+	float a = glm::dot(u, u); // always >= 0
+	float b = glm::dot(u, v);
+	float c = glm::dot(v, v); // always >= 0
+	float d = glm::dot(u, w);
+	float e = glm::dot(v, w);
+	float D = a * c - b * b; // always >= 0
+	float sc, sN, sD = D;    // sc = sN / sD, default sD = D >= 0
+	float tc, tN, tD = D;    // tc = tN / tD, default tD = D >= 0
+
+	// compute the line parameters of the two closest points
+	if (D < 1e-8) { // the lines are almost parallel
+		sN = 0.0; // force using point P0 on segment S1
+		sD = 1.0; // to prevent possible division by 0.0 later
+		tN = e;
+		tD = c;
+	}
+	else { // get the closest points on the infinite lines
+		sN = (b * e - c * d);
+		tN = (a * e - b * d);
+		if (sN < 0.0) { // sc < 0 => the s=0 edge is visible
+			sN = 0.0;
+			tN = e;
+			tD = c;
+		}
+		else if (sN > sD) { // sc > 1  => the s=1 edge is visible
+			sN = sD;
+			tN = e + b;
+			tD = c;
+		}
+	}
+
+	if (tN < 0.0) { // tc < 0 => the t=0 edge is visible
+		tN = 0.0;
+		// recompute sc for this edge
+		if (-d < 0.0)
+			sN = 0.0;
+		else if (-d > a)
+			sN = sD;
+		else {
+			sN = -d;
+			sD = a;
+		}
+	}
+	else if (tN > tD) { // tc > 1  => the t=1 edge is visible
+		tN = tD;
+		// recompute sc for this edge
+		if ((-d + b) < 0.0)
+			sN = 0;
+		else if ((-d + b) > a)
+			sN = sD;
+		else {
+			sN = (-d + b);
+			sD = a;
+		}
+	}
+	// finally do the division to get sc and tc
+	sc = (abs(sN) < 1e-8 ? 0.0 : sN / sD);
+	tc = (abs(tN) < 1e-8 ? 0.0 : tN / tD);
+
+	// get the difference of the two closest points
+	glm::vec3 dP = w + (sc * u) - (tc * v); // =  S1(sc) - S2(tc)
+
+	return glm::length(dP); // return the closest distance
+}
+
+bool checkCapsuleCollision(const Capsule& capsule1, const Capsule& capsule2) {
+	float distance = segmentSegmentDistance(capsule1.pointA, capsule1.pointB, capsule2.pointA, capsule2.pointB);
+	return distance < (capsule1.radius + capsule2.radius);
+}
+
+void handleCollisions() {
+	if (checkCapsuleCollision(player1Capsule, player2Capsule)) {
+		glm::vec3 collisionNormal = glm::normalize(player2Position - player1Position);
+		float overlap = (player1Capsule.radius + player2Capsule.radius) - glm::distance(player1Capsule.pointB, player2Capsule.pointB);
+		float pushFactor = 0.1f;
+
+		// Push both players away from each other
+		player1Position -= collisionNormal * (overlap * pushFactor) * 0.5f;
+		player2Position += collisionNormal * (overlap * pushFactor) * 0.5f;
+
+		// Handling for Player 1 attacking
+		if (P1charState == P1_PUNCH_IDLE || P1charState == P1_KICK_IDLE) {
+			int damage = 0;
+			if (P1charState == P1_PUNCH_IDLE) {
+				damage = P1punchDamage;
+			}
+			else if (P1charState == P1_KICK_IDLE) {
+				damage = P1KickDamage;
+			}
+
+			// Check if Player 2 is currently blocking
+			if (P2charState == P2_IDLE_BLOCK) {
+				std::cout << "Player 2 blocked the attack!" << std::endl;
+			}
+			else {
+				// Apply damage to Player 2 if not blocking
+				player2Health -= damage;
+				std::cout << "Player 2 hit! Health now: " << player2Health << std::endl;
+				if (player2Health <= 0) {
+					std::cout << "Player 2 has been defeated!" << std::endl;
+				}
+			}
+		}
+
+		// Handling for Player 2 attacking
+		if (P2charState == P2_PUNCH_IDLE || P2charState == P2_KICK_IDLE) {
+			int damage = 0;
+			if (P2charState == P2_PUNCH_IDLE) {
+				damage = P2punchDamage;
+			}
+			else if (P2charState == P2_KICK_IDLE) {
+				damage = P2KickDamage;
+			}
+
+			// Check if Player 1 is currently blocking
+			if (P1charState == P1_IDLE_BLOCK) {
+				std::cout << "Player 1 blocked the attack!" << std::endl;
+			}
+			else {
+				// Apply damage to Player 1 if not blocking
+				player1Health -= damage;
+				std::cout << "Player 1 hit! Health now: " << player1Health << std::endl;
+				if (player1Health <= 0) {
+					std::cout << "Player 1 has been defeated!" << std::endl;
+				}
+			}
+		}
+	}
+}
 
 
 
@@ -181,6 +343,8 @@ int main()
 		float currentFrame = glfwGetTime();
 		deltaTime = currentFrame - lastFrame;
 		lastFrame = currentFrame;
+		updateCapsules();
+		handleCollisions();
 
 		// input
 		// -----
