@@ -97,5 +97,11 @@
     <None Include="Shaders\text.vs">
       <Filter>Shaders</Filter>
     </None>
+    <None Include="Shaders\UIShader.fs">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\UIShader.vs">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>

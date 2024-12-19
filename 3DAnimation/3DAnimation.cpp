@@ -76,6 +76,11 @@ void renderQuad();
 void initTextRendering(const std::string& fontPath);
 void RenderText(Shader& shader, std::string text, float x, float y, float scale, glm::vec3 color);
 
+unsigned int loadTexture(char const* path);
+void initUIRendering();
+void RenderUIElement(Shader& shader, unsigned int texture, float x, float y, float width, float height);
+
+
 glm::vec3 lightPositions[4] = {
 glm::vec3(10.0f, 5.0f, 10.0f),
 glm::vec3(-10.0f, 5.0f, 10.0f),
@@ -101,7 +106,8 @@ struct Character {
 std::map<GLchar, Character> Characters;
 unsigned int textVAO, textVBO;
 
-
+unsigned int uiVAO = 0;
+unsigned int uiVBO = 0;
 
 
 // settings
@@ -366,6 +372,8 @@ int main()
 	Shader backgroundShader("Shaders/PBR/background.vs", "Shaders/PBR/background.fs");
 
 	Shader textShader("Shaders/text.vs", "Shaders/text.fs");
+	
+	Shader UIShader("Shaders/UIShader.vs", "Shaders/UIShader.fs");
 
 	// load models
 	// -----------
@@ -406,6 +414,10 @@ int main()
 	glm::mat4 projection = glm::ortho(0.0f, static_cast<float>(SCR_WIDTH), 0.0f, static_cast<float>(SCR_HEIGHT));
 	textShader.use();
 	glUniformMatrix4fv(glGetUniformLocation(textShader.ID, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
+
+	initUIRendering();
+	unsigned int healthBarTexture = loadTexture("Textures/UI/duck.jpg");
+
 
 	// pbr: setup framebuffer
    // ----------------------
@@ -689,9 +701,6 @@ int main()
 		//Car.Draw(pbrShader);
 
 
-		//---------------TEXT-----------------
-
-
 
 		// don't forget to enable shader before setting uniforms
 		ourShader.use();
@@ -734,6 +743,10 @@ int main()
 		player2.Draw(ourShader);
 
 		RenderText(textShader, "Test Text", 10.0f, static_cast<float>(SCR_HEIGHT) - 50.0f, 1.0f, glm::vec3(1.0f, 1.0f, 1.0f));
+
+		UIShader.use();
+		RenderUIElement(UIShader, healthBarTexture, 50.0f, SCR_HEIGHT - 100.0f, 200.0f, 50.0f);
+
 
 		// glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
 		// -------------------------------------------------------------------------------
@@ -1317,44 +1330,6 @@ void renderQuad()
 }
 
 
-unsigned int uiVAO = 0;
-unsigned int uiVBO;
-void renderUIQuad() {
-	if (uiVAO == 0) {
-		float uiVertices[] = {
-			// positions    // texture Coords
-				1.0f,  1.0f,  1.0f, 1.0f, // Top Right
-				1.0f, -1.0f,  1.0f, 0.0f, // Bottom Right
-			-1.0f, -1.0f,  0.0f, 0.0f, // Bottom Left
-			-1.0f,  1.0f,  0.0f, 1.0f  // Top Left 
-		};
-
-		// Setup UI VAO and VBO
-		glGenVertexArrays(1, &uiVAO);
-		glGenBuffers(1, &uiVBO);
-		glBindVertexArray(uiVAO);
-		glBindBuffer(GL_ARRAY_BUFFER, uiVBO);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(uiVertices), &uiVertices, GL_STATIC_DRAW);
-
-		// Position attribute
-		glEnableVertexAttribArray(0);
-		glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
-
-		// Texture Coordinate attribute
-		glEnableVertexAttribArray(1);
-		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
-
-		// Unbind for safety
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
-		glBindVertexArray(0);
-	}
-
-	// Render UI Quad
-	glBindVertexArray(uiVAO);
-	glDrawArrays(GL_TRIANGLE_FAN, 0, 4); // Drawing as TRIANGLE_FAN or TRIANGLE_STRIP
-	glBindVertexArray(0);
-
-}
 
 void initTextRendering(const std::string& fontPath) {
 	// Initialize FreeType library
@@ -1470,4 +1445,89 @@ void RenderText(Shader& shader, std::string text, float x, float y, float scale,
 	glBindVertexArray(0);
 	glBindTexture(GL_TEXTURE_2D, 0);
 
+}
+
+unsigned int loadTexture(char const* path) {
+	unsigned int textureID;
+	glGenTextures(1, &textureID);
+
+	int width, height, nrComponents;
+	unsigned char* data = stbi_load(path, &width, &height, &nrComponents, 0);
+	if (data) {
+		GLenum format;
+		if (nrComponents == 1)
+			format = GL_RED;
+		else if (nrComponents == 3)
+			format = GL_RGB;
+		else if (nrComponents == 4)
+			format = GL_RGBA;
+
+		glBindTexture(GL_TEXTURE_2D, textureID);
+		glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+		glGenerateMipmap(GL_TEXTURE_2D);
+
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+		stbi_image_free(data);
+	}
+	else {
+		std::cout << "Texture failed to load at path: " << path << std::endl;
+		stbi_image_free(data);
+	}
+
+	return textureID;
+}
+
+
+void initUIRendering() {
+	float vertices[] = {
+		// Positions   // Texture Coords
+		0.0f, 1.0f,   0.0f, 1.0f,  // Top-left
+		1.0f, 0.0f,   1.0f, 0.0f,  // Bottom-right
+		0.0f, 0.0f,   0.0f, 0.0f,  // Bottom-left
+
+		0.0f, 1.0f,   0.0f, 1.0f,  // Top-left
+		1.0f, 1.0f,   1.0f, 1.0f,  // Top-right
+		1.0f, 0.0f,   1.0f, 0.0f   // Bottom-right
+	};
+
+	glGenVertexArrays(1, &uiVAO);
+	glGenBuffers(1, &uiVBO);
+	glBindVertexArray(uiVAO);
+
+	glBindBuffer(GL_ARRAY_BUFFER, uiVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
+}
+
+void RenderUIElement(Shader& shader, unsigned int texture, float x, float y, float width, float height) {
+	shader.use();
+
+	// Set up an orthographic projection for UI rendering
+	glm::mat4 projection = glm::ortho(0.0f, (float)SCR_WIDTH, 0.0f, (float)SCR_HEIGHT);
+	shader.setMat4("projection", projection);
+
+	// Transform for positioning and scaling the UI element
+	glm::mat4 model = glm::mat4(1.0f);
+	model = glm::translate(model, glm::vec3(x, y, 0.0f));
+	model = glm::scale(model, glm::vec3(width, height, 1.0f));
+	shader.setMat4("model", model);
+
+	// Bind texture and render the quad
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, texture);
+	glBindVertexArray(uiVAO);
+	glDrawArrays(GL_TRIANGLES, 0, 6);
+	glBindVertexArray(0);
 }
