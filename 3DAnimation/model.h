@@ -10,9 +10,8 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 
-
-#include <learnopengl/mesh.h>
-#include <learnopengl/shader.h>
+#include "mesh.h"
+#include "shader.h"
 
 #include <string>
 #include <fstream>
@@ -28,7 +27,7 @@ class Model
 {
 public:
     // model data 
-    vector<Texture> textures_loaded;	// stores all the textures loaded so far, optimization to make sure textures aren't loaded more than once.
+    vector<PBRTexture> textures_loaded;	// stores all the textures loaded so far, optimization to make sure textures aren't loaded more than once.
     vector<Mesh>    meshes;
     string directory;
     bool gammaCorrection;
@@ -49,12 +48,6 @@ public:
     {
         for (unsigned int i = 0; i < meshes.size(); i++)
             meshes[i].Draw(shader);
-    }
-
-    void DrawPBR(Shader& shader)
-    {
-        for (unsigned int i = 0; i < meshes.size(); i++)
-            meshes[i].DrawPBR(shader);
     }
 
 private:
@@ -99,14 +92,14 @@ private:
     Mesh processMesh(aiMesh* mesh, const aiScene* scene)
     {
         // data to fill
-        vector<Vertex> vertices;
+        vector<PBRVertex> vertices;
         vector<unsigned int> indices;
-        vector<Texture> textures;
+        vector<PBRTexture> textures;
 
         // walk through each of the mesh's vertices
         for (unsigned int i = 0; i < mesh->mNumVertices; i++)
         {
-            Vertex vertex;
+            PBRVertex vertex;
             glm::vec3 vector; // we declare a placeholder vector since assimp uses its own vector class that doesn't directly convert to glm's vec3 class so we transfer the data to this placeholder glm::vec3 first.
             // positions
             vector.x = mesh->mVertices[i].x;
@@ -176,19 +169,19 @@ private:
         //std::vector<Texture> heightMaps = loadMaterialTextures(material, aiTextureType_AMBIENT, "texture_height");
         //textures.insert(textures.end(), heightMaps.begin(), heightMaps.end());
 
-        vector<Texture> albedoMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE, "texture_albedo");
+        vector<PBRTexture> albedoMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE, "texture_albedo");
         textures.insert(textures.end(), albedoMaps.begin(), albedoMaps.end());
 
-        vector<Texture> normalMaps = loadMaterialTextures(material, aiTextureType_NORMALS, "texture_normal");
+        vector<PBRTexture> normalMaps = loadMaterialTextures(material, aiTextureType_NORMALS, "texture_normal");
         textures.insert(textures.end(), normalMaps.begin(), normalMaps.end());
 
-        vector<Texture> metallicMaps = loadMaterialTextures(material, aiTextureType_SPECULAR, "texture_metallic");
+        vector<PBRTexture> metallicMaps = loadMaterialTextures(material, aiTextureType_SPECULAR, "texture_metallic");
         textures.insert(textures.end(), metallicMaps.begin(), metallicMaps.end());
 
-        vector<Texture> roughnessMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE_ROUGHNESS, "texture_roughness");
+        vector<PBRTexture> roughnessMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE_ROUGHNESS, "texture_roughness");
         textures.insert(textures.end(), roughnessMaps.begin(), roughnessMaps.end());
 
-        vector<Texture> aoMaps = loadMaterialTextures(material, aiTextureType_AMBIENT_OCCLUSION, "texture_ao");
+        vector<PBRTexture> aoMaps = loadMaterialTextures(material, aiTextureType_AMBIENT_OCCLUSION, "texture_ao");
         textures.insert(textures.end(), aoMaps.begin(), aoMaps.end());
 
         // return a mesh object created from the extracted mesh data
@@ -198,8 +191,8 @@ private:
 
     // checks all material textures of a given type and loads the textures if they're not loaded yet.
     // the required info is returned as a Texture struct.
-    vector<Texture> loadMaterialTextures(aiMaterial* mat, aiTextureType type, string typeName) {
-        vector<Texture> textures;
+    vector<PBRTexture> loadMaterialTextures(aiMaterial* mat, aiTextureType type, string typeName) {
+        vector<PBRTexture> textures;
         for (unsigned int i = 0; i < mat->GetTextureCount(type); i++) {
             aiString str;
             mat->GetTexture(type, i, &str);
@@ -220,7 +213,7 @@ private:
             }
             if (!skip) {
                 // If texture hasn't been loaded already, load it
-                Texture texture;
+                PBRTexture texture;
                 texture.id = TextureFromFile(str.C_Str(), this->directory);  // Assuming TextureFromFile is your custom function
                 texture.type = typeName;
                 texture.path = str.C_Str();

@@ -135,16 +135,27 @@
   <ItemGroup>
     <ClInclude Include="animation.h" />
     <ClInclude Include="animator.h" />
+    <ClInclude Include="AnimatorMesh.h" />
     <ClInclude Include="animdata.h" />
     <ClInclude Include="bone.h" />
     <ClInclude Include="camera.h" />
+    <ClInclude Include="mesh.h" />
     <ClInclude Include="model.h" />
     <ClInclude Include="model_animation.h" />
+    <ClInclude Include="shader.h" />
     <ClInclude Include="shader_m.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Shaders\anim_model.fs" />
-    <None Include="Shaders\anim_model.vs" />
+    <None Include="Shaders\PBR\background.fs" />
+    <None Include="Shaders\PBR\background.vs" />
+    <None Include="Shaders\PBR\brdf.fs" />
+    <None Include="Shaders\PBR\brdf.vs" />
+    <None Include="Shaders\PBR\cubemap.vs" />
+    <None Include="Shaders\PBR\equirectangular_to_cubemap.fs" />
+    <None Include="Shaders\PBR\irradiance_convolution.fs" />
+    <None Include="Shaders\PBR\pbr.fs" />
+    <None Include="Shaders\PBR\pbr.vs" />
+    <None Include="Shaders\PBR\prefilter.fs" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

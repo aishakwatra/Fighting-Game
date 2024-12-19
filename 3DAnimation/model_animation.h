@@ -10,8 +10,13 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 
-#include <learnopengl/mesh.h>
-#include <learnopengl/shader.h>
+//#include <learnopengl/mesh.h>
+//#include <learnopengl/shader.h>
+
+
+//#include "mesh.h"
+#include "AnimatorMesh.h"
+#include "shader.h"
 
 #include <string>
 #include <fstream>
@@ -29,7 +34,7 @@ class ModelAnim
 public:
     // model data 
     vector<Texture> textures_loaded;	// stores all the textures loaded so far, optimization to make sure textures aren't loaded more than once.
-    vector<Mesh>    meshes;
+    vector<AnimatorMesh>    meshes;
     string directory;
     bool gammaCorrection;
 	
@@ -107,7 +112,7 @@ private:
 	}
 
 
-	Mesh processMesh(aiMesh* mesh, const aiScene* scene)
+	AnimatorMesh processMesh(aiMesh* mesh, const aiScene* scene)
 	{
 		vector<Vertex> vertices;
 		vector<unsigned int> indices;
@@ -151,7 +156,7 @@ private:
 
 		ExtractBoneWeightForVertices(vertices,mesh,scene);
 
-		return Mesh(vertices, indices, textures);
+		return AnimatorMesh(vertices, indices, textures);
 	}
 
 	void SetVertexBoneData(Vertex& vertex, int boneID, float weight)

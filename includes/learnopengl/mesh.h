@@ -37,7 +37,7 @@ struct Texture {
     string path;
 };
 
-class Mesh {
+class AnimMesh {
 public:
     // mesh Data
     vector<Vertex>       vertices;
@@ -46,7 +46,7 @@ public:
     unsigned int VAO;
 
     // constructor
-    Mesh(vector<Vertex> vertices, vector<unsigned int> indices, vector<Texture> textures)
+    AnimMesh(vector<Vertex> vertices, vector<unsigned int> indices, vector<Texture> textures)
     {
         this->vertices = vertices;
         this->indices = indices;
