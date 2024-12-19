@@ -15,6 +15,9 @@
 
 #include "model.h"
 #include <iostream>
+#include "Timer.h"
+
+#define MAX_HEALTH 150.0f
 
 enum AnimStateP1 {
 	P1_IDLE = 1,
@@ -52,7 +55,9 @@ enum GameState {
 	INTRO_P1,
 	INTRO_P2,
 	COUNTDOWN,
-	GAMEPLAY
+	GAMEPLAY,
+	END_ROUND,
+	RESTART
 };
 
 GameState currentState = INTRO_P1;
@@ -71,10 +76,10 @@ struct Capsule {
 Capsule player1Capsule;
 Capsule player2Capsule;
 
-int player1Health = 150;
-int player2Health = 150;
+int player1Health = MAX_HEALTH;
+int player2Health = MAX_HEALTH;
 
-
+CountdownTimer timer;
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
@@ -251,6 +256,10 @@ void startCountdown(float deltaTime) {
 		gameStart = true;
 		currentState = GAMEPLAY;
 
+		
+		timer.resetToDefault();
+		timer.start();
+
 		// Ensure both players are set to idle at the start of gameplay
 		P1charState = P1_IDLE;
 		P2charState = P2_IDLE;
@@ -412,6 +421,41 @@ void handleCollisions() {
 	}
 }
 
+void RenderHealthBars(Shader& shader, unsigned int texture) {
+
+	// Maximum width of the health bar
+	const float maxBarWidth = 400.0f;
+
+	// Calculate the dynamic width based on the health ratio
+	float player1HealthRatio = (float)player1Health / MAX_HEALTH; 
+	float player2HealthRatio = (float)player2Health / MAX_HEALTH;
+
+	float player1BarWidth = maxBarWidth * player1HealthRatio;
+	float player2BarWidth = maxBarWidth * player2HealthRatio;
+
+	// Adjust the position for Player 1's health bar
+	float player1BarX = 50.0f; // Left side stays fixed
+
+	// Adjust the position for Player 2's health bar
+	float player2BarX = SCR_WIDTH - (player1BarX + maxBarWidth) + (maxBarWidth - player2BarWidth); // Right side stays fixed
+
+	// Render Player 1's health bar
+	RenderUIElement(shader, texture, player1BarX, SCR_HEIGHT - 100.0f, player1BarWidth, 40.0f);
+
+	// Render Player 2's health bar
+	RenderUIElement(shader, texture, player2BarX, SCR_HEIGHT - 100.0f, player2BarWidth, 40.0f);
+
+}
+
+void UpdateTimer() {
+
+	if (currentState == GAMEPLAY) {
+		timer.start();
+
+
+	}
+
+}
 
 
 int main()
@@ -529,7 +573,7 @@ int main()
 	glUniformMatrix4fv(glGetUniformLocation(textShader.ID, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
 
 	initUIRendering();
-	unsigned int healthBarTexture = loadTexture("Textures/UI/duck.jpg");
+	unsigned int healthBarTexture = loadTexture("Textures/UI/Test.png");
 
 
 	// pbr: setup framebuffer
@@ -782,20 +826,21 @@ int main()
 
 
 		switch (currentState) {
-		case INTRO_P1:
-		case INTRO_P2:
-			updateIntro(window, deltaTime);
-			break;
-		case COUNTDOWN:
-			startCountdown(deltaTime);
-			break;
-		case GAMEPLAY:
-			// Gameplay logic
-			updateCapsules();
-			handleCollisions();
-			UpdateStateP1(window, player1_animator, P1charState, blendAmountP1);
-			UpdateStateP2(window, player2_animator, P2charState, blendAmountP2);
-			break;
+			case INTRO_P1:
+			case INTRO_P2:
+				updateIntro(window, deltaTime);
+				break;
+			case COUNTDOWN:
+				startCountdown(deltaTime);
+				break;
+			case GAMEPLAY:
+				// Gameplay logic
+				updateCapsules();
+				handleCollisions();
+				UpdateStateP1(window, player1_animator, P1charState, blendAmountP1);
+				UpdateStateP2(window, player2_animator, P2charState, blendAmountP2);
+				timer.update();
+				break;
 		}
 
 		player1_animator.UpdateAnimation(deltaTime);
@@ -827,8 +872,6 @@ int main()
 		//pbrShader.setMat4("model", glm::transpose(glm::inverse(glm::mat3(model))));
 		//pbrShader.setMat3("normalMatrix", glm::transpose(glm::inverse(glm::mat3(model))));
 		//Car.Draw(pbrShader);
-
-
 
 		// don't forget to enable shader before setting uniforms
 		ourShader.use();
@@ -870,10 +913,19 @@ int main()
 		}
 		player2.Draw(ourShader);
 
-		RenderText(textShader, "Test Text", 10.0f, static_cast<float>(SCR_HEIGHT) - 50.0f, 1.0f, glm::vec3(1.0f, 1.0f, 1.0f));
+		
+		if (gameStart) {
 
-		UIShader.use();
-		RenderUIElement(UIShader, healthBarTexture, 50.0f, SCR_HEIGHT - 100.0f, 200.0f, 50.0f);
+			UIShader.use();
+			RenderHealthBars(UIShader, healthBarTexture);
+
+			std::string timerText = timer.getFormattedTime();
+			RenderText(textShader, timerText, (SCR_WIDTH / 2.0f) - 20.0f , static_cast<float>(SCR_HEIGHT) - 100.0f, 1.0f, glm::vec3(1.0f, 1.0f, 1.0f));
+
+		}
+		
+
+		
 
 
 		// glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
