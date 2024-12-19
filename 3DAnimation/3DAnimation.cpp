@@ -43,6 +43,20 @@ enum AnimStateP2 {
 	P2_WALK_BACK
 };
 
+enum GameState {
+	INTRO_P1,
+	INTRO_P2,
+	COUNTDOWN,
+	GAMEPLAY
+};
+
+GameState currentState = INTRO_P1;
+
+bool gameStart = false;
+float introTimer = 0.0f;
+float countdown = 3.0f;  // 3 seconds countdown
+
+
 struct Capsule {
 	glm::vec3 pointA;  // Top center of the capsule
 	glm::vec3 pointB;  // Bottom center of the capsule
@@ -69,7 +83,14 @@ const unsigned int SCR_WIDTH = 1000;
 const unsigned int SCR_HEIGHT = 800;
 
 // camera
-Camera camera(glm::vec3(-3.821124f, 0.010320f, 1.682272f));
+Camera camera(glm::vec3(0.007200f, 0.370334f,0.963989f));
+glm::vec3 gameCamPos = glm::vec3(-3.821124f, 0.010320f, 1.682272f);
+float introP1camYaw = -89.199913f;
+float introP1camPitch = -7.599974;
+float introP2camYaw = 92.700043f;
+float introP2camPitch = -4.899976f;
+float gameCamYaw = -1.000028f;
+float gameCamPitch = 8.200005f;
 
 float lastX = SCR_WIDTH / 2.0f;
 float lastY = SCR_HEIGHT / 2.0f;
@@ -80,6 +101,7 @@ float deltaTime = 0.0f;
 float lastFrame = 0.0f;
 
 ModelAnim player1;
+Animation introAnimationP1;
 Animation idleAnimationP1;
 Animation walkFrontAnimationP1;
 Animation walkBackAnimationP1;
@@ -88,6 +110,7 @@ Animation kickAnimationP1;
 Animation blockAnimationP1;
 
 ModelAnim player2;
+Animation introAnimationP2;
 Animation idleAnimationP2;
 Animation walkFrontAnimationP2;
 Animation walkBackAnimationP2;
@@ -95,8 +118,10 @@ Animation punchAnimationP2;
 Animation kickAnimationP2;
 Animation blockAnimationP2;
 
-glm::vec3 player1Position = glm::vec3(0.0f, -0.4f, 0.0f);
-glm::vec3 player2Position = glm::vec3(0.0f, -0.4f, 3.0f);
+glm::vec3 player1Position = glm::vec3(0.0f, -0.4f, -2.0f);
+glm::vec3 player2Position = glm::vec3(0.0f, -0.4f, 5.0f);
+glm::vec3 player1gamePosition = glm::vec3(0.0f, -0.4f, 0.0f);
+glm::vec3 player2gamePosition = glm::vec3(0.0f, -0.4f, 3.0f);
 float moveSpeed = 0.5f;
 int P1punchDamage = 1;
 int P1KickDamage = 2;
@@ -109,6 +134,91 @@ enum AnimStateP2 P2charState = P2_IDLE;
 float blendAmountP1 = 0.0f;
 float blendAmountP2 = 0.0f;
 float blendRate = 0.055f;
+
+float lerp(float start, float end, float t) {
+	return start + t * (end - start);
+}
+
+
+
+void setupIntro() {
+	// Only start Player 1's intro animation initially
+	player1_animator.PlayAnimation(&introAnimationP1, nullptr, 0.0f, 0.0f, 0.0f);
+}
+
+
+void updateIntro(GLFWwindow* window, float deltaTime) {
+	float introDurationP1 = introAnimationP1.GetDuration() / 1000.0f; // Convert ms to seconds
+	float introDurationP2 = introAnimationP2.GetDuration() / 1000.0f; // Convert ms to seconds
+	static float transitionDuration = 1.0f; // Duration of the camera transition
+	static float transitionTimer = 0.0f; // Timer for the camera transition
+
+	if (currentState == INTRO_P1) {
+		introTimer += deltaTime;
+		if (introTimer >= introDurationP1) {
+			currentState = INTRO_P2;
+			introTimer = 0.0f;
+			transitionTimer = 0.0f; // Reset transition timer
+			player1_animator.PlayAnimation(&idleAnimationP1, nullptr, 0.0f, 0.0f, 0.0f);
+			player2_animator.PlayAnimation(&introAnimationP2, nullptr, 0.0f, 0.0f, 0.0f);
+		}
+	}
+	else if (currentState == INTRO_P2) {
+		if (transitionTimer < transitionDuration) {
+			// Perform the interpolation
+			float t = transitionTimer / transitionDuration;
+			camera.Yaw = lerp(introP1camYaw, introP2camYaw, t);
+			camera.Pitch = lerp(introP1camPitch, introP2camPitch, t);
+			camera.updateCameraVectors();
+			transitionTimer += deltaTime;
+		}
+		else {
+			// Ensure the final values are set after interpolation
+			camera.Yaw = introP2camYaw;
+			camera.Pitch = introP2camPitch;
+			camera.updateCameraVectors();
+		}
+
+		introTimer += deltaTime;
+		if (introTimer >= introDurationP2) { // End intro slightly earlier to blend to countdown
+			// Reset positions and camera after intro
+			player2Position = player2gamePosition; // Reset to game position
+			player1Position = player1gamePosition;
+			camera.Yaw = gameCamYaw;
+			camera.Pitch = gameCamPitch;
+			camera.Position = gameCamPos;
+			camera.updateCameraVectors();
+			player1_animator.PlayAnimation(&idleAnimationP1, nullptr, 0.0f, 0.0f, 0.0f);
+			player2_animator.PlayAnimation(&idleAnimationP2, nullptr, 0.0f, 0.0f, 0.0f);
+			currentState = COUNTDOWN;
+			introTimer = 0.0f;
+		}
+	}
+}
+
+
+
+void startCountdown(float deltaTime) {
+	countdown -= deltaTime;
+	if (countdown <= 0.0f) {
+		gameStart = true;
+		currentState = GAMEPLAY;
+
+		// Ensure both players are set to idle at the start of gameplay
+		P1charState = P1_IDLE;
+		P2charState = P2_IDLE;
+
+		// Start idle animations for both players
+		player1_animator.PlayAnimation(&idleAnimationP1, nullptr, 0.0f, 0.0f, 0.0f);
+		player2_animator.PlayAnimation(&idleAnimationP2, nullptr, 0.0f, 0.0f, 0.0f);
+
+		// Reset camera position if necessary
+		camera.Position = gameCamPos;  // Example camera position
+	}
+}
+
+
+
 
 void updateCapsules() {
 	// Adjust these values based on the character's current pose and animation
@@ -281,7 +391,7 @@ int main()
 	}
 	glfwMakeContextCurrent(window);
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-	//glfwSetCursorPosCallback(window, mouse_callback);
+	glfwSetCursorPosCallback(window, mouse_callback);
 	glfwSetScrollCallback(window, scroll_callback);
 
 	// tell GLFW to capture our mouse
@@ -311,7 +421,8 @@ int main()
 	// idle 3.3, walk 2.06, run 0.83, punch 1.03, kick 1.6
 	
 	player1.loadModel("Object/Vegas/Big Vegas.dae");
-	idleAnimationP1.loadAnimation("Object/Vegas/Idle.dae", &player1);
+	introAnimationP1.loadAnimation("Object/Vegas/Step Hip Hop Dance.dae",&player1);
+	idleAnimationP1.loadAnimation("Object/Vegas/Idle.dae",&player1);
 	walkFrontAnimationP1.loadAnimation("Object/Vegas/WalkForward.dae", &player1,1.8f);
 	walkBackAnimationP1.loadAnimation("Object/Vegas/WalkBack.dae", &player1,1.5f);
 	punchAnimationP1.loadAnimation("Object/Vegas/Punch Combo.dae", &player1,1.5f);
@@ -319,6 +430,7 @@ int main()
 	blockAnimationP1.loadAnimation("Object/Vegas/Bouncing Fight Idle.dae", &player1,1.2f);
 
 	player2.loadModel("Object/Wrestler/Ch43_nonPBR.dae");
+	introAnimationP2.loadAnimation("Object/Wrestler/Catwalk Walk.dae", &player2);
 	idleAnimationP2.loadAnimation("Object/Wrestler/Idle.dae", &player2);
 	walkFrontAnimationP2.loadAnimation("Object/Wrestler/Walking.dae", &player2, 1.5f);
 	walkBackAnimationP2.loadAnimation("Object/Wrestler/Standing Walk Back.dae", &player2, 1.7f);
@@ -326,13 +438,15 @@ int main()
 	kickAnimationP2.loadAnimation("Object/Wrestler/Mma Kick.dae", &player2, 1.8f);
 	blockAnimationP2.loadAnimation("Object/Wrestler/Center Block.dae", &player2, 1.5f);
 
+	setupIntro();
 
-	camera.Yaw = -1.000028f;
-	camera.Pitch = 8.200005f;
+	camera.Yaw = introP1camYaw;
+	camera.Pitch = introP1camPitch;
 
 	camera.updateCameraVectors();
 	// draw in wireframe
 	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	
 
 	// render loop
 	// -----------
@@ -343,8 +457,7 @@ int main()
 		float currentFrame = glfwGetTime();
 		deltaTime = currentFrame - lastFrame;
 		lastFrame = currentFrame;
-		updateCapsules();
-		handleCollisions();
+		
 
 		// input
 		// -----
@@ -353,9 +466,23 @@ int main()
 			glfwSetWindowShouldClose(window, true);
 
 
-		UpdateStateP1(window, player1_animator, P1charState, blendAmountP1);
-		UpdateStateP2(window, player2_animator, P2charState, blendAmountP2);
 
+		switch (currentState) {
+		case INTRO_P1:
+		case INTRO_P2:
+			updateIntro(window, deltaTime);
+			break;
+		case COUNTDOWN:
+			startCountdown(deltaTime);
+			break;
+		case GAMEPLAY:
+			// Gameplay logic
+			updateCapsules();
+			handleCollisions();
+			UpdateStateP1(window, player1_animator, P1charState, blendAmountP1);
+			UpdateStateP2(window, player2_animator, P2charState, blendAmountP2);
+			break;
+		}
 
 		player1_animator.UpdateAnimation(deltaTime);
 		player2_animator.UpdateAnimation(deltaTime);
@@ -446,9 +573,9 @@ void processInput(GLFWwindow* window)
 	if (glfwGetKey(window, GLFW_KEY_I) == GLFW_PRESS)
 		camera.ProcessKeyboard(FORWARD, deltaTime);
 	if (glfwGetKey(window, GLFW_KEY_J) == GLFW_PRESS)
-		camera.ProcessKeyboard(BACKWARD, deltaTime);
-	if (glfwGetKey(window, GLFW_KEY_K) == GLFW_PRESS)
 		camera.ProcessKeyboard(LEFT, deltaTime);
+	if (glfwGetKey(window, GLFW_KEY_K) == GLFW_PRESS)
+		camera.ProcessKeyboard(BACKWARD, deltaTime);
 	if (glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS)
 		camera.ProcessKeyboard(RIGHT, deltaTime);
 
@@ -691,6 +818,8 @@ void UpdateStateP1(GLFWwindow* window, Animator& animator, AnimStateP1& charStat
 
 	void UpdateStateP2(GLFWwindow* window, Animator& animator, AnimStateP2& charState, float& blendAmount)
 	{
+			
+
 		switch (charState) {
 		case P2_IDLE:
 			if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) {
