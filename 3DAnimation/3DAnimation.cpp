@@ -6,6 +6,9 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#include <ft2build.h>
+#include FT_FREETYPE_H
+
 #include "camera.h"
 #include "animator.h"
 #include "model_animation.h"
@@ -70,6 +73,9 @@ void UpdateStateP2(GLFWwindow* window, Animator& animator, AnimStateP2& charStat
 void renderCube();
 void renderQuad();
 
+void initTextRendering(const std::string& fontPath);
+void RenderText(Shader& shader, std::string text, float x, float y, float scale, glm::vec3 color);
+
 glm::vec3 lightPositions[4] = {
 glm::vec3(10.0f, 5.0f, 10.0f),
 glm::vec3(-10.0f, 5.0f, 10.0f),
@@ -83,6 +89,19 @@ glm::vec3 lightColors[4] = {
 	glm::vec3(500.0f, 500.0f, 500.0f),
 	glm::vec3(500.0f, 500.0f, 500.0f)
 };
+
+//TEXT
+struct Character {
+	unsigned int TextureID;
+	glm::ivec2 Size;
+	glm::ivec2 Bearing;
+	unsigned int Advance;
+};
+
+std::map<GLchar, Character> Characters;
+unsigned int textVAO, textVBO;
+
+
 
 
 // settings
@@ -346,6 +365,8 @@ int main()
 	Shader brdfShader("Shaders/PBR/brdf.vs", "Shaders/PBR/brdf.fs");
 	Shader backgroundShader("Shaders/PBR/background.vs", "Shaders/PBR/background.fs");
 
+	Shader textShader("Shaders/text.vs", "Shaders/text.fs");
+
 	// load models
 	// -----------
 	// idle 3.3, walk 2.06, run 0.83, punch 1.03, kick 1.6
@@ -380,6 +401,11 @@ int main()
 
 	backgroundShader.use();
 	backgroundShader.setInt("environmentMap", 0);
+
+	initTextRendering("Textures/Fonts/Roboto-Bold.ttf");
+	glm::mat4 projection = glm::ortho(0.0f, static_cast<float>(SCR_WIDTH), 0.0f, static_cast<float>(SCR_HEIGHT));
+	textShader.use();
+	glUniformMatrix4fv(glGetUniformLocation(textShader.ID, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
 
 	// pbr: setup framebuffer
    // ----------------------
@@ -656,12 +682,15 @@ int main()
 		glActiveTexture(GL_TEXTURE2);
 		glBindTexture(GL_TEXTURE_2D, brdfLUTTexture);
 
-		//RENDER WITH PBR SHADER HERE
+		//--------------PBR--------------------
+		//glm::mat4 model = glm::mat4(1.0f);
+		//pbrShader.setMat4("model", glm::transpose(glm::inverse(glm::mat3(model))));
+		//pbrShader.setMat3("normalMatrix", glm::transpose(glm::inverse(glm::mat3(model))));
+		//Car.Draw(pbrShader);
 
-		glm::mat4 model = glm::mat4(1.0f);
-		pbrShader.setMat4("model", glm::transpose(glm::inverse(glm::mat3(model))));
-		pbrShader.setMat3("normalMatrix", glm::transpose(glm::inverse(glm::mat3(model))));
-		Car.Draw(pbrShader);
+
+		//---------------TEXT-----------------
+
 
 
 		// don't forget to enable shader before setting uniforms
@@ -704,6 +733,7 @@ int main()
 		}
 		player2.Draw(ourShader);
 
+		RenderText(textShader, "Test Text", 10.0f, static_cast<float>(SCR_HEIGHT) - 50.0f, 1.0f, glm::vec3(1.0f, 1.0f, 1.0f));
 
 		// glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
 		// -------------------------------------------------------------------------------
@@ -1178,151 +1208,266 @@ void UpdateStateP1(GLFWwindow* window, Animator& animator, AnimStateP1& charStat
 	}
 	
 	
-
-	// renderCube() renders a 1x1 3D cube in NDC.
+// renderCube() renders a 1x1 3D cube in NDC.
 // -------------------------------------------------
-	unsigned int cubeVAO = 0;
-	unsigned int cubeVBO = 0;
-	void renderCube()
+unsigned int cubeVAO = 0;
+unsigned int cubeVBO = 0;
+void renderCube()
+{
+	// initialize (if necessary)
+	if (cubeVAO == 0)
 	{
-		// initialize (if necessary)
-		if (cubeVAO == 0)
-		{
-			float vertices[] = {
-				// back face
-				-1.0f, -1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 0.0f, 0.0f, // bottom-left
-				 1.0f,  1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 1.0f, 1.0f, // top-right
-				 1.0f, -1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 1.0f, 0.0f, // bottom-right         
-				 1.0f,  1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 1.0f, 1.0f, // top-right
-				-1.0f, -1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 0.0f, 0.0f, // bottom-left
-				-1.0f,  1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 0.0f, 1.0f, // top-left
-				// front face
-				-1.0f, -1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f, 0.0f, // bottom-left
-				 1.0f, -1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 1.0f, 0.0f, // bottom-right
-				 1.0f,  1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 1.0f, 1.0f, // top-right
-				 1.0f,  1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 1.0f, 1.0f, // top-right
-				-1.0f,  1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f, 1.0f, // top-left
-				-1.0f, -1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f, 0.0f, // bottom-left
-				// left face
-				-1.0f,  1.0f,  1.0f, -1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-right
-				-1.0f,  1.0f, -1.0f, -1.0f,  0.0f,  0.0f, 1.0f, 1.0f, // top-left
-				-1.0f, -1.0f, -1.0f, -1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-left
-				-1.0f, -1.0f, -1.0f, -1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-left
-				-1.0f, -1.0f,  1.0f, -1.0f,  0.0f,  0.0f, 0.0f, 0.0f, // bottom-right
-				-1.0f,  1.0f,  1.0f, -1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-right
-				// right face
-				 1.0f,  1.0f,  1.0f,  1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-left
-				 1.0f, -1.0f, -1.0f,  1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-right
-				 1.0f,  1.0f, -1.0f,  1.0f,  0.0f,  0.0f, 1.0f, 1.0f, // top-right         
-				 1.0f, -1.0f, -1.0f,  1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-right
-				 1.0f,  1.0f,  1.0f,  1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-left
-				 1.0f, -1.0f,  1.0f,  1.0f,  0.0f,  0.0f, 0.0f, 0.0f, // bottom-left     
-				 // bottom face
-				 -1.0f, -1.0f, -1.0f,  0.0f, -1.0f,  0.0f, 0.0f, 1.0f, // top-right
-				  1.0f, -1.0f, -1.0f,  0.0f, -1.0f,  0.0f, 1.0f, 1.0f, // top-left
-				  1.0f, -1.0f,  1.0f,  0.0f, -1.0f,  0.0f, 1.0f, 0.0f, // bottom-left
-				  1.0f, -1.0f,  1.0f,  0.0f, -1.0f,  0.0f, 1.0f, 0.0f, // bottom-left
-				 -1.0f, -1.0f,  1.0f,  0.0f, -1.0f,  0.0f, 0.0f, 0.0f, // bottom-right
-				 -1.0f, -1.0f, -1.0f,  0.0f, -1.0f,  0.0f, 0.0f, 1.0f, // top-right
-				 // top face
-				 -1.0f,  1.0f, -1.0f,  0.0f,  1.0f,  0.0f, 0.0f, 1.0f, // top-left
-				  1.0f,  1.0f , 1.0f,  0.0f,  1.0f,  0.0f, 1.0f, 0.0f, // bottom-right
-				  1.0f,  1.0f, -1.0f,  0.0f,  1.0f,  0.0f, 1.0f, 1.0f, // top-right     
-				  1.0f,  1.0f,  1.0f,  0.0f,  1.0f,  0.0f, 1.0f, 0.0f, // bottom-right
-				 -1.0f,  1.0f, -1.0f,  0.0f,  1.0f,  0.0f, 0.0f, 1.0f, // top-left
-				 -1.0f,  1.0f,  1.0f,  0.0f,  1.0f,  0.0f, 0.0f, 0.0f  // bottom-left        
-			};
-			glGenVertexArrays(1, &cubeVAO);
-			glGenBuffers(1, &cubeVBO);
-			// fill buffer
-			glBindBuffer(GL_ARRAY_BUFFER, cubeVBO);
-			glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-			// link vertex attributes
-			glBindVertexArray(cubeVAO);
-			glEnableVertexAttribArray(0);
-			glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
-			glEnableVertexAttribArray(1);
-			glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
-			glEnableVertexAttribArray(2);
-			glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
-			glBindBuffer(GL_ARRAY_BUFFER, 0);
-			glBindVertexArray(0);
-		}
-		// render Cube
+		float vertices[] = {
+			// back face
+			-1.0f, -1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 0.0f, 0.0f, // bottom-left
+				1.0f,  1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 1.0f, 1.0f, // top-right
+				1.0f, -1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 1.0f, 0.0f, // bottom-right         
+				1.0f,  1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 1.0f, 1.0f, // top-right
+			-1.0f, -1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 0.0f, 0.0f, // bottom-left
+			-1.0f,  1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 0.0f, 1.0f, // top-left
+			// front face
+			-1.0f, -1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f, 0.0f, // bottom-left
+				1.0f, -1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 1.0f, 0.0f, // bottom-right
+				1.0f,  1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 1.0f, 1.0f, // top-right
+				1.0f,  1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 1.0f, 1.0f, // top-right
+			-1.0f,  1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f, 1.0f, // top-left
+			-1.0f, -1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f, 0.0f, // bottom-left
+			// left face
+			-1.0f,  1.0f,  1.0f, -1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-right
+			-1.0f,  1.0f, -1.0f, -1.0f,  0.0f,  0.0f, 1.0f, 1.0f, // top-left
+			-1.0f, -1.0f, -1.0f, -1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-left
+			-1.0f, -1.0f, -1.0f, -1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-left
+			-1.0f, -1.0f,  1.0f, -1.0f,  0.0f,  0.0f, 0.0f, 0.0f, // bottom-right
+			-1.0f,  1.0f,  1.0f, -1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-right
+			// right face
+				1.0f,  1.0f,  1.0f,  1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-left
+				1.0f, -1.0f, -1.0f,  1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-right
+				1.0f,  1.0f, -1.0f,  1.0f,  0.0f,  0.0f, 1.0f, 1.0f, // top-right         
+				1.0f, -1.0f, -1.0f,  1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-right
+				1.0f,  1.0f,  1.0f,  1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-left
+				1.0f, -1.0f,  1.0f,  1.0f,  0.0f,  0.0f, 0.0f, 0.0f, // bottom-left     
+				// bottom face
+				-1.0f, -1.0f, -1.0f,  0.0f, -1.0f,  0.0f, 0.0f, 1.0f, // top-right
+				1.0f, -1.0f, -1.0f,  0.0f, -1.0f,  0.0f, 1.0f, 1.0f, // top-left
+				1.0f, -1.0f,  1.0f,  0.0f, -1.0f,  0.0f, 1.0f, 0.0f, // bottom-left
+				1.0f, -1.0f,  1.0f,  0.0f, -1.0f,  0.0f, 1.0f, 0.0f, // bottom-left
+				-1.0f, -1.0f,  1.0f,  0.0f, -1.0f,  0.0f, 0.0f, 0.0f, // bottom-right
+				-1.0f, -1.0f, -1.0f,  0.0f, -1.0f,  0.0f, 0.0f, 1.0f, // top-right
+				// top face
+				-1.0f,  1.0f, -1.0f,  0.0f,  1.0f,  0.0f, 0.0f, 1.0f, // top-left
+				1.0f,  1.0f , 1.0f,  0.0f,  1.0f,  0.0f, 1.0f, 0.0f, // bottom-right
+				1.0f,  1.0f, -1.0f,  0.0f,  1.0f,  0.0f, 1.0f, 1.0f, // top-right     
+				1.0f,  1.0f,  1.0f,  0.0f,  1.0f,  0.0f, 1.0f, 0.0f, // bottom-right
+				-1.0f,  1.0f, -1.0f,  0.0f,  1.0f,  0.0f, 0.0f, 1.0f, // top-left
+				-1.0f,  1.0f,  1.0f,  0.0f,  1.0f,  0.0f, 0.0f, 0.0f  // bottom-left        
+		};
+		glGenVertexArrays(1, &cubeVAO);
+		glGenBuffers(1, &cubeVBO);
+		// fill buffer
+		glBindBuffer(GL_ARRAY_BUFFER, cubeVBO);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+		// link vertex attributes
 		glBindVertexArray(cubeVAO);
-		glDrawArrays(GL_TRIANGLES, 0, 36);
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+		glEnableVertexAttribArray(1);
+		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+		glEnableVertexAttribArray(2);
+		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
 		glBindVertexArray(0);
 	}
+	// render Cube
+	glBindVertexArray(cubeVAO);
+	glDrawArrays(GL_TRIANGLES, 0, 36);
+	glBindVertexArray(0);
+}
 
-	// renderQuad() renders a 1x1 XY quad in NDC
-	// -----------------------------------------
-	unsigned int quadVAO = 0;
-	unsigned int quadVBO;
-	void renderQuad()
+// renderQuad() renders a 1x1 XY quad in NDC
+// -----------------------------------------
+unsigned int quadVAO = 0;
+unsigned int quadVBO;
+void renderQuad()
+{
+	if (quadVAO == 0)
 	{
-		if (quadVAO == 0)
-		{
-			float quadVertices[] = {
-				// positions        // texture Coords
-				-1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
-				-1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
-				 1.0f,  1.0f, 0.0f, 1.0f, 1.0f,
-				 1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
-			};
-			// setup plane VAO
-			glGenVertexArrays(1, &quadVAO);
-			glGenBuffers(1, &quadVBO);
-			glBindVertexArray(quadVAO);
-			glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
-			glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
-			glEnableVertexAttribArray(0);
-			glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
-			glEnableVertexAttribArray(1);
-			glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
-		}
+		float quadVertices[] = {
+			// positions        // texture Coords
+			-1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
+			-1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
+				1.0f,  1.0f, 0.0f, 1.0f, 1.0f,
+				1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
+		};
+		// setup plane VAO
+		glGenVertexArrays(1, &quadVAO);
+		glGenBuffers(1, &quadVBO);
 		glBindVertexArray(quadVAO);
-		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-		glBindVertexArray(0);
-
-
+		glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+		glEnableVertexAttribArray(1);
+		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
 	}
+	glBindVertexArray(quadVAO);
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+	glBindVertexArray(0);
 
 
-	unsigned int uiVAO = 0;
-	unsigned int uiVBO;
-	void renderUIQuad() {
-		if (uiVAO == 0) {
-			float uiVertices[] = {
-				// positions    // texture Coords
-				 1.0f,  1.0f,  1.0f, 1.0f, // Top Right
-				 1.0f, -1.0f,  1.0f, 0.0f, // Bottom Right
-				-1.0f, -1.0f,  0.0f, 0.0f, // Bottom Left
-				-1.0f,  1.0f,  0.0f, 1.0f  // Top Left 
-			};
+}
 
-			// Setup UI VAO and VBO
-			glGenVertexArrays(1, &uiVAO);
-			glGenBuffers(1, &uiVBO);
-			glBindVertexArray(uiVAO);
-			glBindBuffer(GL_ARRAY_BUFFER, uiVBO);
-			glBufferData(GL_ARRAY_BUFFER, sizeof(uiVertices), &uiVertices, GL_STATIC_DRAW);
 
-			// Position attribute
-			glEnableVertexAttribArray(0);
-			glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+unsigned int uiVAO = 0;
+unsigned int uiVBO;
+void renderUIQuad() {
+	if (uiVAO == 0) {
+		float uiVertices[] = {
+			// positions    // texture Coords
+				1.0f,  1.0f,  1.0f, 1.0f, // Top Right
+				1.0f, -1.0f,  1.0f, 0.0f, // Bottom Right
+			-1.0f, -1.0f,  0.0f, 0.0f, // Bottom Left
+			-1.0f,  1.0f,  0.0f, 1.0f  // Top Left 
+		};
 
-			// Texture Coordinate attribute
-			glEnableVertexAttribArray(1);
-			glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
-
-			// Unbind for safety
-			glBindBuffer(GL_ARRAY_BUFFER, 0);
-			glBindVertexArray(0);
-		}
-
-		// Render UI Quad
+		// Setup UI VAO and VBO
+		glGenVertexArrays(1, &uiVAO);
+		glGenBuffers(1, &uiVBO);
 		glBindVertexArray(uiVAO);
-		glDrawArrays(GL_TRIANGLE_FAN, 0, 4); // Drawing as TRIANGLE_FAN or TRIANGLE_STRIP
-		glBindVertexArray(0);
+		glBindBuffer(GL_ARRAY_BUFFER, uiVBO);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(uiVertices), &uiVertices, GL_STATIC_DRAW);
 
+		// Position attribute
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+
+		// Texture Coordinate attribute
+		glEnableVertexAttribArray(1);
+		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+
+		// Unbind for safety
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+		glBindVertexArray(0);
 	}
+
+	// Render UI Quad
+	glBindVertexArray(uiVAO);
+	glDrawArrays(GL_TRIANGLE_FAN, 0, 4); // Drawing as TRIANGLE_FAN or TRIANGLE_STRIP
+	glBindVertexArray(0);
+
+}
+
+void initTextRendering(const std::string& fontPath) {
+	// Initialize FreeType library
+	FT_Library ft;
+	if (FT_Init_FreeType(&ft)) {
+		std::cerr << "ERROR::FREETYPE: Could not init FreeType Library" << std::endl;
+		return;
+	}
+
+	if (fontPath.empty())
+	{
+		std::cout << "ERROR::FREETYPE: Failed to load fontPath" << std::endl;
+		return;
+	}
+
+	FT_Face face;
+	if (FT_New_Face(ft, fontPath.c_str(), 0, &face)) {
+		std::cerr << "ERROR::FREETYPE: Failed to load font" << std::endl;
+		FT_Done_FreeType(ft);
+		return;
+	}
+
+	FT_Set_Pixel_Sizes(face, 0, 48);
+	glPixelStorei(GL_UNPACK_ALIGNMENT, 1); // Disable byte-alignment restriction
+
+	// Load first 128 characters of ASCII
+	for (unsigned char c = 0; c < 128; c++) {
+		if (FT_Load_Char(face, c, FT_LOAD_RENDER)) {
+			std::cerr << "ERROR::FREETYPE: Failed to load Glyph" << std::endl;
+			continue;
+		}
+		unsigned int texture;
+		glGenTextures(1, &texture);
+		glBindTexture(GL_TEXTURE_2D, texture);
+		glTexImage2D(
+			GL_TEXTURE_2D,
+			0,
+			GL_RED,
+			face->glyph->bitmap.width,
+			face->glyph->bitmap.rows,
+			0,
+			GL_RED,
+			GL_UNSIGNED_BYTE,
+			face->glyph->bitmap.buffer
+		);
+
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+		Character character = {
+			texture,
+			glm::ivec2(face->glyph->bitmap.width, face->glyph->bitmap.rows),
+			glm::ivec2(face->glyph->bitmap_left, face->glyph->bitmap_top),
+			static_cast<unsigned int>(face->glyph->advance.x)
+		};
+		Characters.insert(std::pair<char, Character>(c, character));
+	}
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+	// Clean up FreeType
+	FT_Done_Face(face);
+	FT_Done_FreeType(ft);
+
+	// Set up text VAO/VBO
+	glGenVertexArrays(1, &textVAO);
+	glGenBuffers(1, &textVBO);
+	glBindVertexArray(textVAO);
+	glBindBuffer(GL_ARRAY_BUFFER, textVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 6 * 4, NULL, GL_DYNAMIC_DRAW);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
+}
+
+void RenderText(Shader& shader, std::string text, float x, float y, float scale, glm::vec3 color) {
+
+	glUseProgram(shader.ID); // Use text shader
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); // Ensure proper blending for text
+	glUniform3f(glGetUniformLocation(shader.ID, "textColor"), color.x, color.y, color.z);
+	glActiveTexture(GL_TEXTURE0);
+	glBindVertexArray(textVAO);
+
+	std::string::const_iterator c;
+	for (c = text.begin(); c != text.end(); c++) {
+		Character ch = Characters[*c];
+
+		float xpos = x + ch.Bearing.x * scale;
+		float ypos = y - (ch.Size.y - ch.Bearing.y) * scale;
+
+		float w = ch.Size.x * scale;
+		float h = ch.Size.y * scale;
+		float vertices[6][4] = {
+			{ xpos,     ypos + h,   0.0f, 0.0f },
+			{ xpos,     ypos,       0.0f, 1.0f },
+			{ xpos + w, ypos,       1.0f, 1.0f },
+
+			{ xpos,     ypos + h,   0.0f, 0.0f },
+			{ xpos + w, ypos,       1.0f, 1.0f },
+			{ xpos + w, ypos + h,   1.0f, 0.0f }
+		};
+		glBindTexture(GL_TEXTURE_2D, ch.TextureID);
+		glBindBuffer(GL_ARRAY_BUFFER, textVBO);
+		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+		glDrawArrays(GL_TRIANGLES, 0, 6);
+		x += (ch.Advance >> 6) * scale;
+	}
+	glBindVertexArray(0);
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+}
