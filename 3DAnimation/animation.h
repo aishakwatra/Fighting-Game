@@ -35,6 +35,7 @@ public:
 		assert(scene && scene->mRootNode);
 		auto animation = scene->mAnimations[0];
 		m_Duration = animation->mDuration;
+		m_DurationInSecond = m_Duration / m_TicksPerSecond;
 		m_Speed = 1.0f;
 		m_TicksPerSecond = animation->mTicksPerSecond;
 		aiMatrix4x4 globalTransformation = scene->mRootNode->mTransformation;
@@ -44,15 +45,8 @@ public:
 	}
 
 	void AddDamageKeyframe(float timeInSeconds, int damage) {
-		if (m_TicksPerSecond > 0) {
-			float timeInTicks = timeInSeconds * m_TicksPerSecond; // Convert seconds to ticks if needed
-			damageKeyframes.push_back({ timeInTicks, damage });
-			cout << "Added damage keyframe at time " << timeInTicks << " ticks" << endl;
-		}
-		else {
-			// Directly use seconds if TicksPerSecond is not defined or irrelevant
-			damageKeyframes.push_back({ timeInSeconds, damage });
-		}
+		damageKeyframes.push_back({ timeInSeconds, damage });
+		cout << "Added damage keyframe at time " << timeInSeconds << " sec" << endl;
 	}
 
 	int getDamageForTime(float currentTimeInSeconds) {
@@ -164,6 +158,7 @@ private:
 	float currentDuration;
 	std::vector<Bone> m_Bones;
 	AssimpNodeData m_RootNode;
+	float m_DurationInSecond;
 	std::map<std::string, BoneInfo> m_BoneInfoMap;
 	std::vector<DamageKeyframe> damageKeyframes;
 };

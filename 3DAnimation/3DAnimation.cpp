@@ -32,7 +32,10 @@ enum AnimStateP1 {
 	P1_WALK_FRONT_IDLE,
 	P1_WALK_BACK_IDLE,
 	P1_WALK_FRONT,
-	P1_WALK_BACK
+	P1_WALK_BACK,
+	P1_IDLE_HIT,
+	P1_HIT_IDLE
+
 };
 
 enum AnimStateP2 {
@@ -160,6 +163,7 @@ Animation walkBackAnimationP1;
 Animation punchAnimationP1;
 Animation kickAnimationP1;
 Animation blockAnimationP1;
+Animation hitAnimationP1;
 
 ModelAnim player2;
 Animation introAnimationP2;
@@ -169,6 +173,7 @@ Animation walkBackAnimationP2;
 Animation punchAnimationP2;
 Animation kickAnimationP2;
 Animation blockAnimationP2;
+Animation hitAnimationP2;
 
 glm::vec3 player1Position = glm::vec3(0.0f, -0.4f, -2.0f);
 glm::vec3 player2Position = glm::vec3(0.0f, -0.4f, 5.0f);
@@ -207,7 +212,7 @@ void updateIntro(GLFWwindow* window, float deltaTime) {
 
 	if (currentState == INTRO_P1) {
 		introTimer += deltaTime;
-		if (introTimer >= introDurationP1) {
+		if (introTimer >= introDurationP2 || glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
 			currentState = INTRO_P2;
 			introTimer = 0.0f;
 			transitionTimer = 0.0f; // Reset transition timer
@@ -232,7 +237,7 @@ void updateIntro(GLFWwindow* window, float deltaTime) {
 		}
 
 		introTimer += deltaTime;
-		if (introTimer >= introDurationP2) { // End intro slightly earlier to blend to countdown
+		if (introTimer >= introDurationP2 || glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) { // End intro slightly earlier to blend to countdown
 			// Reset positions and camera after intro
 			player2Position = player2gamePosition; // Reset to game position
 			player1Position = player1gamePosition;
@@ -246,8 +251,8 @@ void updateIntro(GLFWwindow* window, float deltaTime) {
 			introTimer = 0.0f;
 		}
 	}
-}
 
+}
 
 
 void startCountdown(float deltaTime) {
@@ -397,24 +402,23 @@ void handleCollisions() {
 
 		// Handling for Player 2 attacking
 		if (P2charState == P2_PUNCH_IDLE || P2charState == P2_KICK_IDLE) {
-			int damage = 0;
-			if (P2charState == P2_PUNCH_IDLE) {
-				damage = P2punchDamage;
-			}
-			else if (P2charState == P2_KICK_IDLE) {
-				damage = P2KickDamage;
-			}
+			float animationTime = player2_animator.getCurrentAnimationTime(); // Assuming you have a method to get current time
+			std::cout << "Player 2 animation time: " << animationTime << std::endl;
+			int damage = punchAnimationP2.getDamageForTime(animationTime); // Adjust to use animation-specific damage checks
 
-			// Check if Player 1 is currently blocking
-			if (P1charState == P1_IDLE_BLOCK) {
-				std::cout << "Player 1 blocked the attack!" << std::endl;
-			}
-			else {
-				// Apply damage to Player 1 if not blocking
-				player1Health -= damage;
-				std::cout << "Player 1 hit! Health now: " << player1Health << std::endl;
-				if (player1Health <= 0) {
-					std::cout << "Player 1 has been defeated!" << std::endl;
+			if (damage > 0) { // Damage is applied only if the current frame is a damage keyframe
+				// Check if Player 1 is currently blocking
+				if (P1charState == P1_IDLE_BLOCK) {
+					std::cout << "Player 1 blocked the attack!" << std::endl;
+				}
+				else {
+					// Apply damage to Player 1 if not blocking
+					player1Health -= damage;
+					std::cout << "Player 1 hit! Health now: " << player1Health << std::endl;
+					P1charState = P1_IDLE_HIT; // Update the state to reflect being hit
+					if (player1Health <= 0) {
+						std::cout << "Player 1 has been defeated!" << std::endl;
+					}
 				}
 			}
 		}
@@ -542,6 +546,7 @@ int main()
 	punchAnimationP1.loadAnimation("Object/Vegas/Punch Combo.dae", &player1,1.5f);
 	kickAnimationP1.loadAnimation("Object/Vegas/Kicking.dae", &player1,1.5f);
 	blockAnimationP1.loadAnimation("Object/Vegas/Bouncing Fight Idle.dae", &player1,1.2f);
+	hitAnimationP1.loadAnimation("Object/Vegas/Head Hit.dae", &player1, 1.5f);
 
 	player2.loadModel("Object/Wrestler/Ch43_nonPBR.dae");
 	introAnimationP2.loadAnimation("Object/Wrestler/Catwalk Walk.dae", &player2);
@@ -549,10 +554,10 @@ int main()
 	walkFrontAnimationP2.loadAnimation("Object/Wrestler/Walking.dae", &player2, 1.5f);
 	walkBackAnimationP2.loadAnimation("Object/Wrestler/Standing Walk Back.dae", &player2, 1.7f);
 	punchAnimationP2.loadAnimation("Object/Wrestler/Cross Punch.dae", &player2, 1.7f);
+	punchAnimationP2.AddDamageKeyframe(0.5f, P2punchDamage);
 	kickAnimationP2.loadAnimation("Object/Wrestler/Mma Kick.dae", &player2, 1.8f);
 	blockAnimationP2.loadAnimation("Object/Wrestler/Center Block.dae", &player2, 1.5f);
 
-	Model Car("Object/Car/CarBody2.obj");
 
 	pbrShader.use();
 	pbrShader.setInt("irradianceMap", 0);
@@ -1023,8 +1028,6 @@ void UpdateStateP1(GLFWwindow* window, Animator& animator, AnimStateP1& charStat
 			animator.PlayAnimation(&idleAnimationP1, &walkBackAnimationP1, animator.m_CurrentTime, 0.0f, blendAmount);
 			charState = P1_IDLE_WALK_BACK;
 		}
-
-
 		if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
 			blendAmount = 0.0f;
 			animator.PlayAnimation(&idleAnimationP1, &blockAnimationP1, animator.m_CurrentTime, 0.0f, blendAmount);
@@ -1194,6 +1197,36 @@ void UpdateStateP1(GLFWwindow* window, Animator& animator, AnimStateP1& charStat
 				charState = P1_IDLE;
 			}
 			//printf("block_idle \n");
+		}
+		else {
+			// punching
+			//printf("blocking \n");
+		}
+		break;
+	case P1_IDLE_HIT:
+		blendAmount += blendRate * 2;
+		blendAmount = fmod(blendAmount, 1.0f);
+		animator.PlayAnimation(&idleAnimationP1, &hitAnimationP1, animator.m_CurrentTime, animator.m_CurrentTime2, blendAmount);
+		if (blendAmount > 0.9f) {
+			blendAmount = 0.0f;
+			float startTime = animator.m_CurrentTime2;
+			animator.PlayAnimation(&hitAnimationP1, NULL, startTime, 0.0f, blendAmount);
+			charState = P1_HIT_IDLE;
+		}
+		//printf("idle_hit\n");
+		break;
+	case P1_HIT_IDLE:
+		if (animator.m_CurrentTime > 0.7f * hitAnimationP1.GetDuration()) {
+			blendAmount += blendRate;
+			blendAmount = fmod(blendAmount, 1.0f);
+			animator.PlayAnimation(&hitAnimationP1, &idleAnimationP1, animator.m_CurrentTime, animator.m_CurrentTime2, blendAmount);
+			if (blendAmount > 0.7f) {
+				blendAmount = 0.0f;
+				float startTime = animator.m_CurrentTime2;
+				animator.PlayAnimation(&idleAnimationP1, NULL, startTime, 0.0f, blendAmount);
+				charState = P1_IDLE;
+			}
+			//printf("hit_idle \n");
 		}
 		else {
 			// punching
