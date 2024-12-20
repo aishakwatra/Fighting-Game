@@ -32,6 +32,7 @@ public:
 	Animator(Animation* animation)
 	{
 		m_CurrentTime = 0.0;
+		m_AnimationTimer = 0.0;
 		m_CurrentAnimation = animation;
 		m_CurrentAnimation2 = NULL;
 		m_blendAmount = 0;
@@ -58,6 +59,8 @@ public:
 	void UpdateAnimation(float dt)
 	{
 		m_DeltaTime = dt;
+		m_AnimationTimer += m_DeltaTime * m_CurrentAnimation->GetSpeed();
+		m_AnimationTimer = fmod(m_AnimationTimer, m_CurrentAnimation->GetDuration() / m_CurrentAnimation->GetTicksPerSecond());
 		if (m_CurrentAnimation)
 		{
 			m_CurrentTime += m_CurrentAnimation->GetTicksPerSecond() * dt;
@@ -80,6 +83,11 @@ public:
 		m_CurrentAnimation2 = pAnimation2;
 		m_CurrentTime2 = time2;
 		m_blendAmount = blend;
+<<<<<<< Updated upstream
+=======
+		m_AnimationTimer = 0.0f;
+
+>>>>>>> Stashed changes
 	}
 
 	void PlayAnimation(Animation* pAnimation) {
@@ -156,6 +164,37 @@ public:
 		return m_FinalBoneMatrices;
 	}
 
+<<<<<<< Updated upstream
+=======
+	Animation* getCurrentAnimation() const {
+		return m_CurrentAnimation;
+	}
+
+	// Getter for the secondary animation
+	Animation* getCurrentAnimation2() const {
+		return m_CurrentAnimation2;
+	}
+
+	float getCurrentAnimationTime() const {
+		return m_AnimationTimer; // Return the custom animation timer for checking keyframes
+	}
+
+	// Getter for the current time of the primary animation
+	float getCurrentTime() const {
+		return m_CurrentTime;
+	}
+
+	// Getter for the current time of the secondary animation
+	float getCurrentTime2() const {
+		return m_CurrentTime2;
+	}
+
+	// Getter for the blend amount
+	float getBlendAmount() const {
+		return m_blendAmount;
+	}
+
+>>>>>>> Stashed changes
 	//private:
 	std::vector<glm::mat4> m_FinalBoneMatrices;
 	Animation* m_CurrentAnimation;
@@ -164,5 +203,10 @@ public:
 	float m_CurrentTime2;
 	float m_DeltaTime;
 	float m_blendAmount;
+<<<<<<< Updated upstream
+=======
+	float m_speed;
+	float m_AnimationTimer;
+>>>>>>> Stashed changes
 
 };

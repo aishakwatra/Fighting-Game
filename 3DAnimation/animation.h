@@ -30,12 +30,51 @@ public:
 		auto animation = scene->mAnimations[0];
 		m_Duration = animation->mDuration;
 		m_TicksPerSecond = animation->mTicksPerSecond;
+		m_DurationInSecond = m_Duration / m_TicksPerSecond;
 		aiMatrix4x4 globalTransformation = scene->mRootNode->mTransformation;
 		globalTransformation = globalTransformation.Inverse();
 		ReadHierarchyData(m_RootNode, scene->mRootNode);
 		ReadMissingBones(animation, *model);
 	}
 
+<<<<<<< Updated upstream
+=======
+	void AddDamageKeyframe(float timeInSeconds, int damage) {
+		damageKeyframes.push_back({ timeInSeconds, damage });
+	    cout << "Added damage keyframe at time " << timeInSeconds << " sec" << endl;
+	}
+
+	int getDamageForTime(float currentTimeInSeconds) {
+		float tolerance = 0.05f; // This may need adjustment based on your specific timing precision
+		for (const auto& frame : damageKeyframes) {
+			if (std::abs(currentTimeInSeconds - frame.time) <= tolerance) {
+				return frame.damage;
+			}
+		}
+		return 0;
+	}
+
+
+	void loadAnimation(const std::string& animationPath, ModelAnim* model,float speed = 1.0f)
+	{
+		Assimp::Importer importer;
+		const aiScene* scene = importer.ReadFile(animationPath, aiProcess_Triangulate);
+		assert(scene && scene->mRootNode);
+		auto animation = scene->mAnimations[0];  // Assuming first animation is what we need
+
+		m_Duration = animation->mDuration;
+		m_Speed = speed;
+		m_TicksPerSecond = animation->mTicksPerSecond != 0 ? animation->mTicksPerSecond : 25.0f;  // Default to 25 if not specified
+
+		std::cout << "Loaded Animation: " << animationPath << " with duration: " << m_Duration << " and ticks per second: " << m_TicksPerSecond << std::endl;
+
+		aiMatrix4x4 globalTransformation = scene->mRootNode->mTransformation;
+		globalTransformation = globalTransformation.Inverse();
+		ReadHierarchyData(m_RootNode, scene->mRootNode);
+		ReadMissingBones(animation, *model);
+	}
+
+>>>>>>> Stashed changes
 	~Animation()
 	{
 	}
@@ -113,6 +152,11 @@ private:
 	}
 	float m_Duration;
 	int m_TicksPerSecond;
+<<<<<<< Updated upstream
+=======
+	float currentDuration;
+	float m_DurationInSecond;
+>>>>>>> Stashed changes
 	std::vector<Bone> m_Bones;
 	AssimpNodeData m_RootNode;
 	std::map<std::string, BoneInfo> m_BoneInfoMap;
