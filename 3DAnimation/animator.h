@@ -83,11 +83,8 @@ public:
 		m_CurrentAnimation2 = pAnimation2;
 		m_CurrentTime2 = time2;
 		m_blendAmount = blend;
-<<<<<<< Updated upstream
-=======
 		m_AnimationTimer = 0.0f;
 
->>>>>>> Stashed changes
 	}
 
 	void PlayAnimation(Animation* pAnimation) {
@@ -164,8 +161,6 @@ public:
 		return m_FinalBoneMatrices;
 	}
 
-<<<<<<< Updated upstream
-=======
 	Animation* getCurrentAnimation() const {
 		return m_CurrentAnimation;
 	}
@@ -194,7 +189,6 @@ public:
 		return m_blendAmount;
 	}
 
->>>>>>> Stashed changes
 	//private:
 	std::vector<glm::mat4> m_FinalBoneMatrices;
 	Animation* m_CurrentAnimation;

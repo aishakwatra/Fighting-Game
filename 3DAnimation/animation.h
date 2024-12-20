@@ -37,8 +37,6 @@ public:
 		ReadMissingBones(animation, *model);
 	}
 
-<<<<<<< Updated upstream
-=======
 	void AddDamageKeyframe(float timeInSeconds, int damage) {
 		damageKeyframes.push_back({ timeInSeconds, damage });
 	    cout << "Added damage keyframe at time " << timeInSeconds << " sec" << endl;
@@ -74,7 +72,6 @@ public:
 		ReadMissingBones(animation, *model);
 	}
 
->>>>>>> Stashed changes
 	~Animation()
 	{
 	}

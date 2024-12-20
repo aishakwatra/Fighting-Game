@@ -12,8 +12,6 @@
 
 #include <iostream>
 
-<<<<<<< Updated upstream
-=======
 #define MAX_HEALTH 150.0f
 
 enum AnimStateP1 {
@@ -80,7 +78,6 @@ int player1Health = MAX_HEALTH;
 int player2Health = MAX_HEALTH;
 
 CountdownTimer timer;
->>>>>>> Stashed changes
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
@@ -101,15 +98,6 @@ bool firstMouse = true;
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
 
-<<<<<<< Updated upstream
-std::map<std::string, std::string> player1Anims = {
-	{"idle", "Object/Vegas/Idle.dae"},
-	{"walk", "Object/Vegas/WalkForward.dae"},
-	{"run", "Object/Vegas/WalkBack.dae"},
-	{"punch", "Object/Vegas/Punching.dae"},
-	{"kick", "Object/Vegas/Kick.dae"}
-};
-=======
 ModelAnim player1;
 Animation introAnimationP1;
 Animation idleAnimationP1;
@@ -831,7 +819,6 @@ void UpdateStateP2(GLFWwindow* window, Animator& animator, AnimStateP2& charStat
 	}
 }
 
->>>>>>> Stashed changes
 
 
 int main()
@@ -889,12 +876,6 @@ int main()
 	// -----------
 	// idle 3.3, walk 2.06, run 0.83, punch 1.03, kick 1.6
 	
-<<<<<<< Updated upstream
-	//enum AnimState charState = IDLE;
-	//float blendAmount = 0.0f;
-	//float blendRate = 0.055f;
-
-=======
 	player1.loadModel("Object/Vegas/Big Vegas.dae");
 	introAnimationP1.loadAnimation("Object/Vegas/Step Hip Hop Dance.dae",&player1);
 	idleAnimationP1.loadAnimation("Object/Vegas/Idle.dae",&player1);
@@ -1156,7 +1137,6 @@ int main()
 	}
 
 
->>>>>>> Stashed changes
 	// draw in wireframe
 	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
@@ -1179,141 +1159,9 @@ int main()
 
 		// input
 		// -----
-<<<<<<< Updated upstream
-		processInput(window);
-		if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS) {
-			player1.Action("idle", false);  // No blending when switching to idle
-		}
-		if (glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS) {
-			player1.Action("walk", true);  // Blend into walking
-		}
-		if (glfwGetKey(window, GLFW_KEY_3) == GLFW_PRESS) {
-			player1.Action("punch", true);  // Blend into punching
-		}
-		if (glfwGetKey(window, GLFW_KEY_4) == GLFW_PRESS) {
-			player1.Action("kick", true);  // Blend into kicking
-		}
-		
-		//switch (charState) {
-		//case IDLE:
-		//	if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
-		//		blendAmount = 0.0f;
-		//		animator.PlayAnimation(&idleAnimation, &walkAnimation, animator.m_CurrentTime, 0.0f, blendAmount);
-		//		charState = IDLE_WALK;
-		//	}
-		//	else if (glfwGetKey(window, GLFW_KEY_J) == GLFW_PRESS) {
-		//		blendAmount = 0.0f;
-		//		animator.PlayAnimation(&idleAnimation, &punchAnimation, animator.m_CurrentTime, 0.0f, blendAmount);
-		//		charState = IDLE_PUNCH;
-		//	}
-		//	else if (glfwGetKey(window, GLFW_KEY_K) == GLFW_PRESS) {
-		//		blendAmount = 0.0f;
-		//		animator.PlayAnimation(&idleAnimation, &kickAnimation, animator.m_CurrentTime, 0.0f, blendAmount);
-		//		charState = IDLE_KICK;
-		//	}
-		//	printf("idle \n");
-		//	break;
-		//case IDLE_WALK:
-		//	blendAmount += blendRate;
-		//	blendAmount = fmod(blendAmount, 1.0f);
-		//	animator.PlayAnimation(&idleAnimation, &walkAnimation, animator.m_CurrentTime, animator.m_CurrentTime2, blendAmount);
-		//	if (blendAmount > 0.9f) {
-		//		blendAmount = 0.0f;
-		//		float startTime = animator.m_CurrentTime2;
-		//		animator.PlayAnimation(&walkAnimation, NULL, startTime, 0.0f, blendAmount);
-		//		charState = WALK;
-		//	}
-		//	printf("idle_walk \n");
-		//	break;
-		//case WALK:
-		//	animator.PlayAnimation(&walkAnimation, NULL, animator.m_CurrentTime, animator.m_CurrentTime2, blendAmount);
-		//	if (glfwGetKey(window, GLFW_KEY_UP) != GLFW_PRESS) {
-		//		charState = WALK_IDLE;
-		//	}
-		//	printf("walking\n");
-		//	break;
-		//case WALK_IDLE:
-		//	blendAmount += blendRate;
-		//	blendAmount = fmod(blendAmount, 1.0f);
-		//	animator.PlayAnimation(&walkAnimation, &idleAnimation, animator.m_CurrentTime, animator.m_CurrentTime2, blendAmount);
-		//	if (blendAmount > 0.9f) {
-		//		blendAmount = 0.0f;
-		//		float startTime = animator.m_CurrentTime2;
-		//		animator.PlayAnimation(&idleAnimation, NULL, startTime, 0.0f, blendAmount);
-		//		charState = IDLE;
-		//	}
-		//	printf("walk_idle \n");
-		//	break;
-		//case IDLE_PUNCH:
-		//	blendAmount += blendRate;
-		//	blendAmount = fmod(blendAmount, 1.0f);
-		//	animator.PlayAnimation(&idleAnimation, &punchAnimation, animator.m_CurrentTime, animator.m_CurrentTime2, blendAmount);
-		//	if (blendAmount > 0.9f) {
-		//		blendAmount = 0.0f;
-		//		float startTime = animator.m_CurrentTime2;
-		//		animator.PlayAnimation(&punchAnimation, NULL, startTime, 0.0f, blendAmount);
-		//		charState = PUNCH_IDLE;
-		//	}
-		//	printf("idle_punch\n");
-		//	break;
-		//case PUNCH_IDLE:
-		//	if (animator.m_CurrentTime > 0.7 * punchAnimation.GetDuration()) {
-		//		blendAmount += blendRate;
-		//		blendAmount = fmod(blendAmount, 1.0f);
-		//		animator.PlayAnimation(&punchAnimation, &idleAnimation, animator.m_CurrentTime, animator.m_CurrentTime2, blendAmount);
-		//		if (blendAmount > 0.9f) {
-		//			blendAmount = 0.0f;
-		//			float startTime = animator.m_CurrentTime2;
-		//			animator.PlayAnimation(&idleAnimation, NULL, startTime, 0.0f, blendAmount);
-		//			charState = IDLE;
-		//		}
-		//		printf("punch_idle \n");
-		//	}
-		//	else {
-		//		// punching
-		//		printf("punching \n");
-		//	}
-		//	break;
-		//case IDLE_KICK:
-		//	blendAmount += blendRate;
-		//	blendAmount = fmod(blendAmount, 1.0f);
-		//	animator.PlayAnimation(&idleAnimation, &kickAnimation, animator.m_CurrentTime, animator.m_CurrentTime2, blendAmount);
-		//	if (blendAmount > 0.9f) {
-		//		blendAmount = 0.0f;
-		//		float startTime = animator.m_CurrentTime2;
-		//		animator.PlayAnimation(&kickAnimation, NULL, startTime, 0.0f, blendAmount);
-		//		charState = KICK_IDLE;
-		//	}
-		//	printf("idle_kick\n");
-		//	break;
-		//case KICK_IDLE:
-		//	if (animator.m_CurrentTime > 0.7f * kickAnimation.GetDuration()) {
-		//		blendAmount += blendRate;
-		//		blendAmount = fmod(blendAmount, 1.0f);
-		//		animator.PlayAnimation(&kickAnimation, &idleAnimation, animator.m_CurrentTime, animator.m_CurrentTime2, blendAmount);
-		//		if (blendAmount > 0.9f) {
-		//			blendAmount = 0.0f;
-		//			float startTime = animator.m_CurrentTime2;
-		//			animator.PlayAnimation(&idleAnimation, NULL, startTime, 0.0f, blendAmount);
-		//			charState = IDLE;
-		//		}
-		//		printf("kick_idle \n");
-		//	}
-		//	else {
-		//		// punching
-		//		printf("kicking \n");
-		//	}
-		//	break;
-		//}
-
-
-
-		
-=======
 		//processInput(window);
 		if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
 			glfwSetWindowShouldClose(window, true);
->>>>>>> Stashed changes
 
 		// render
 		// ------
@@ -1349,9 +1197,6 @@ int main()
 		//ourShader.setMat4("model", model2);
 		//guitarModel.Draw(ourShader);
 
-<<<<<<< Updated upstream
-
-=======
 		
 
 
@@ -1385,7 +1230,6 @@ int main()
 			RenderText(textShader, timerText, (SCR_WIDTH / 2.0f) - 20.0f , static_cast<float>(SCR_HEIGHT) - 100.0f, 1.0f, glm::vec3(1.0f, 1.0f, 1.0f));
 
 		}
->>>>>>> Stashed changes
 
 		// glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
 		// -------------------------------------------------------------------------------
@@ -1463,8 +1307,6 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
 	camera.ProcessMouseScroll(yoffset);
 }
-<<<<<<< Updated upstream
-=======
 
 
 
@@ -1779,4 +1621,3 @@ void RenderUIElement(Shader& shader, unsigned int texture, float x, float y, flo
 	glDrawArrays(GL_TRIANGLES, 0, 6);
 	glBindVertexArray(0);
 }
->>>>>>> Stashed changes
