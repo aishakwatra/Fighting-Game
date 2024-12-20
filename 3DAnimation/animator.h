@@ -15,35 +15,7 @@
 class Animator
 {
 public:
-
-	Animator ()
-	{
-		m_CurrentTime = 0.0;
-		m_CurrentAnimation = NULL;
-		m_CurrentAnimation2 = NULL;
-		m_blendAmount = 0;
-
-		m_FinalBoneMatrices.reserve(100);
-
-		for (int i = 0; i < 100; i++)
-			m_FinalBoneMatrices.push_back(glm::mat4(1.0f));
-	}
-
 	Animator(Animation* animation)
-	{
-		m_CurrentTime = 0.0;
-		m_AnimationTimer = 0.0;
-		m_CurrentAnimation = animation;
-		m_CurrentAnimation2 = NULL;
-		m_blendAmount = 0;
-
-		m_FinalBoneMatrices.reserve(100);
-
-		for (int i = 0; i < 100; i++)
-			m_FinalBoneMatrices.push_back(glm::mat4(1.0f));
-	}
-
-	void LoadAnimation(Animation* animation)
 	{
 		m_CurrentTime = 0.0;
 		m_CurrentAnimation = animation;
@@ -83,20 +55,9 @@ public:
 		m_CurrentAnimation2 = pAnimation2;
 		m_CurrentTime2 = time2;
 		m_blendAmount = blend;
-<<<<<<< Updated upstream
-=======
 		m_AnimationTimer = 0.0f;
 
->>>>>>> Stashed changes
 	}
-
-	void PlayAnimation(Animation* pAnimation) {
-		m_CurrentAnimation = pAnimation;
-		m_CurrentAnimation2 = nullptr; // Ensure no blending happens
-		m_blendAmount = 0.0f;
-		m_CurrentTime = 0.0f; // Restart the animation
-	}
-
 
 	glm::mat4 UpdateBlend(Bone* Bone1, Bone* Bone2) {
 		glm::vec3 bonePos1, bonePos2, finalPos;
@@ -164,8 +125,6 @@ public:
 		return m_FinalBoneMatrices;
 	}
 
-<<<<<<< Updated upstream
-=======
 	Animation* getCurrentAnimation() const {
 		return m_CurrentAnimation;
 	}
@@ -175,13 +134,13 @@ public:
 		return m_CurrentAnimation2;
 	}
 
-	float getCurrentAnimationTime() const {
-		return m_AnimationTimer; // Return the custom animation timer for checking keyframes
-	}
-
 	// Getter for the current time of the primary animation
 	float getCurrentTime() const {
 		return m_CurrentTime;
+	}
+
+	float getCurrentAnimationTime() const {
+		return m_AnimationTimer; // Return the custom animation timer for checking keyframes
 	}
 
 	// Getter for the current time of the secondary animation
@@ -194,7 +153,6 @@ public:
 		return m_blendAmount;
 	}
 
->>>>>>> Stashed changes
 	//private:
 	std::vector<glm::mat4> m_FinalBoneMatrices;
 	Animation* m_CurrentAnimation;
@@ -203,10 +161,7 @@ public:
 	float m_CurrentTime2;
 	float m_DeltaTime;
 	float m_blendAmount;
-<<<<<<< Updated upstream
-=======
 	float m_speed;
 	float m_AnimationTimer;
->>>>>>> Stashed changes
 
 };

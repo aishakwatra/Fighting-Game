@@ -13,12 +13,15 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Shaders">
+      <UniqueIdentifier>{8decc4f0-1948-45bc-a60d-e80e451a37ae}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\PBR">
+      <UniqueIdentifier>{7ceb8bcc-fa1c-4ca8-b92f-06bdfa5efd07}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="3DAnimation.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Player.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -44,16 +47,64 @@
     <ClInclude Include="shader_m.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="Player.h">
+    <ClInclude Include="model.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="mesh.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="shader.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="AnimatorMesh.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Timer.h">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="anim_model.fs">
-      <Filter>Source Files</Filter>
+    <None Include="Shaders\PBR\background.fs">
+      <Filter>Shaders\PBR</Filter>
     </None>
-    <None Include="anim_model.vs">
-      <Filter>Source Files</Filter>
+    <None Include="Shaders\PBR\background.vs">
+      <Filter>Shaders\PBR</Filter>
+    </None>
+    <None Include="Shaders\PBR\brdf.fs">
+      <Filter>Shaders\PBR</Filter>
+    </None>
+    <None Include="Shaders\PBR\brdf.vs">
+      <Filter>Shaders\PBR</Filter>
+    </None>
+    <None Include="Shaders\PBR\cubemap.vs">
+      <Filter>Shaders\PBR</Filter>
+    </None>
+    <None Include="Shaders\PBR\equirectangular_to_cubemap.fs">
+      <Filter>Shaders\PBR</Filter>
+    </None>
+    <None Include="Shaders\PBR\irradiance_convolution.fs">
+      <Filter>Shaders\PBR</Filter>
+    </None>
+    <None Include="Shaders\PBR\pbr.fs">
+      <Filter>Shaders\PBR</Filter>
+    </None>
+    <None Include="Shaders\PBR\pbr.vs">
+      <Filter>Shaders\PBR</Filter>
+    </None>
+    <None Include="Shaders\PBR\prefilter.fs">
+      <Filter>Shaders\PBR</Filter>
+    </None>
+    <None Include="Shaders\text.fs">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\text.vs">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\UIShader.fs">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\UIShader.vs">
+      <Filter>Shaders</Filter>
     </None>
   </ItemGroup>
 </Project>

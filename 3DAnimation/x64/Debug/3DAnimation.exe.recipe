@@ -2,11 +2,7 @@
 <Project>
   <ProjectOutputs>
     <ProjectOutput>
-<<<<<<< Updated upstream
-      <FullPath>D:\DT384\Fighting-Game\x64\Debug\3DAnimation.exe</FullPath>
-=======
       <FullPath>C:\Capt\Fighting-Game\x64\Debug\3DAnimation.exe</FullPath>
->>>>>>> Stashed changes
     </ProjectOutput>
   </ProjectOutputs>
   <ContentFiles />

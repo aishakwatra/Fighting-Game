@@ -17,31 +17,36 @@ struct AssimpNodeData
 	std::vector<AssimpNodeData> children;
 };
 
+struct DamageKeyframe {
+	float time;
+	int damage;
+};
+
+
 class Animation
 {
 public:
 	Animation() = default;
 
-	Animation(const std::string& animationPath, Model* model)
+	Animation(const std::string& animationPath, ModelAnim* model,float speed = 1.0f)
 	{
 		Assimp::Importer importer;
 		const aiScene* scene = importer.ReadFile(animationPath, aiProcess_Triangulate);
 		assert(scene && scene->mRootNode);
 		auto animation = scene->mAnimations[0];
 		m_Duration = animation->mDuration;
-		m_TicksPerSecond = animation->mTicksPerSecond;
 		m_DurationInSecond = m_Duration / m_TicksPerSecond;
+		m_Speed = 1.0f;
+		m_TicksPerSecond = animation->mTicksPerSecond;
 		aiMatrix4x4 globalTransformation = scene->mRootNode->mTransformation;
 		globalTransformation = globalTransformation.Inverse();
 		ReadHierarchyData(m_RootNode, scene->mRootNode);
 		ReadMissingBones(animation, *model);
 	}
 
-<<<<<<< Updated upstream
-=======
 	void AddDamageKeyframe(float timeInSeconds, int damage) {
 		damageKeyframes.push_back({ timeInSeconds, damage });
-	    cout << "Added damage keyframe at time " << timeInSeconds << " sec" << endl;
+		cout << "Added damage keyframe at time " << timeInSeconds << " sec" << endl;
 	}
 
 	int getDamageForTime(float currentTimeInSeconds) {
@@ -74,7 +79,6 @@ public:
 		ReadMissingBones(animation, *model);
 	}
 
->>>>>>> Stashed changes
 	~Animation()
 	{
 	}
@@ -91,16 +95,16 @@ public:
 		else return &(*iter);
 	}
 
-	glm::mat4 GetBoneTransform(const std::string& boneName) {
-		Bone* bone = FindBone(boneName);
-		if (bone) {
-			return bone->GetFinalTransformation();  // Make sure this calculation is done elsewhere
-		}
-		return glm::mat4(1.0f);  // Identity matrix if bone not found
+	void setAnimationSpeed(float speed)
+	{
+		m_Speed = speed;
 	}
 
+
+	
 	inline float GetTicksPerSecond() { return m_TicksPerSecond; }
 	inline float GetDuration() { return m_Duration;}
+	inline float GetSpeed() { return m_Speed; }
 	inline const AssimpNodeData& GetRootNode() { return m_RootNode; }
 	inline const std::map<std::string,BoneInfo>& GetBoneIDMap() 
 	{ 
@@ -108,7 +112,7 @@ public:
 	}
 
 private:
-	void ReadMissingBones(const aiAnimation* animation, Model& model)
+	void ReadMissingBones(const aiAnimation* animation, ModelAnim& model)
 	{
 		int size = animation->mNumChannels;
 
@@ -133,8 +137,6 @@ private:
 		m_BoneInfoMap = boneInfoMap;
 	}
 
-
-
 	void ReadHierarchyData(AssimpNodeData& dest, const aiNode* src)
 	{
 		assert(src);
@@ -151,14 +153,13 @@ private:
 		}
 	}
 	float m_Duration;
+	float m_Speed;
 	int m_TicksPerSecond;
-<<<<<<< Updated upstream
-=======
 	float currentDuration;
-	float m_DurationInSecond;
->>>>>>> Stashed changes
 	std::vector<Bone> m_Bones;
 	AssimpNodeData m_RootNode;
+	float m_DurationInSecond;
 	std::map<std::string, BoneInfo> m_BoneInfoMap;
+	std::vector<DamageKeyframe> damageKeyframes;
 };
 

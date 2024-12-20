@@ -95,7 +95,7 @@ public:
             if (Pitch < -89.0f)
                 Pitch = -89.0f;
         }
-
+		printf("Yaw: %f, Pitch: %f\n", Yaw, Pitch);
         // update Front, Right and Up Vectors using the updated Euler angles
         updateCameraVectors();
     }
@@ -110,8 +110,6 @@ public:
             Zoom = 45.0f;
     }
 
-private:
-    // calculates the front vector from the Camera's (updated) Euler Angles
     void updateCameraVectors()
     {
         // calculate the new Front vector
@@ -122,7 +120,11 @@ private:
         Front = glm::normalize(front);
         // also re-calculate the Right and Up vector
         Right = glm::normalize(glm::cross(Front, WorldUp));  // normalize the vectors, because their length gets closer to 0 the more you look up or down which results in slower movement.
-        Up    = glm::normalize(glm::cross(Right, Front));
+        Up = glm::normalize(glm::cross(Right, Front));
     }
+
+private:
+    // calculates the front vector from the Camera's (updated) Euler Angles
+   
 };
 #endif
