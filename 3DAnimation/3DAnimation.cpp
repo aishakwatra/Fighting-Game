@@ -51,7 +51,9 @@ enum AnimStateP2 {
 	P2_WALK_FRONT_IDLE,
 	P2_WALK_BACK_IDLE,
 	P2_WALK_FRONT,
-	P2_WALK_BACK
+	P2_WALK_BACK,
+	P2_IDLE_HIT,
+	P2_HIT_IDLE
 };
 
 enum GameState {
@@ -378,33 +380,42 @@ void handleCollisions() {
 
 		// Handling for Player 1 attacking
 		if (P1charState == P1_PUNCH_IDLE || P1charState == P1_KICK_IDLE) {
+			float animationTime = player1_animator.getCurrentAnimationTime(); // Get the current animation time
 			int damage = 0;
 			if (P1charState == P1_PUNCH_IDLE) {
-				damage = P1punchDamage;
+				damage = punchAnimationP1.getDamageForTime(animationTime); // Check for damage at the current animation time
 			}
 			else if (P1charState == P1_KICK_IDLE) {
-				damage = P1KickDamage;
+				damage = kickAnimationP1.getDamageForTime(animationTime);
 			}
 
-			// Check if Player 2 is currently blocking
-			if (P2charState == P2_IDLE_BLOCK) {
-				std::cout << "Player 2 blocked the attack!" << std::endl;
-			}
-			else {
-				// Apply damage to Player 2 if not blocking
-				player2Health -= damage;
-				std::cout << "Player 2 hit! Health now: " << player2Health << std::endl;
-				if (player2Health <= 0) {
-					std::cout << "Player 2 has been defeated!" << std::endl;
+			if (damage > 0) { // Damage is applied only if the current frame is a damage keyframe
+				// Check if Player 2 is currently blocking
+				if (P2charState == P2_IDLE_BLOCK) {
+					std::cout << "Player 2 blocked the attack!" << std::endl;
+				}
+				else {
+					// Apply damage to Player 2 if not blocking
+					player2Health -= damage;
+					std::cout << "Player 2 hit! Health now: " << player2Health << std::endl;
+					P2charState = P2_IDLE_HIT; // Update the state to reflect being hit
+					if (player2Health <= 0) {
+						std::cout << "Player 2 has been defeated!" << std::endl;
+					}
 				}
 			}
 		}
 
 		// Handling for Player 2 attacking
 		if (P2charState == P2_PUNCH_IDLE || P2charState == P2_KICK_IDLE) {
-			float animationTime = player2_animator.getCurrentAnimationTime(); // Assuming you have a method to get current time
-			std::cout << "Player 2 animation time: " << animationTime << std::endl;
-			int damage = punchAnimationP2.getDamageForTime(animationTime); // Adjust to use animation-specific damage checks
+			float animationTime = player2_animator.getCurrentAnimationTime(); // Get the current animation time
+			int damage = 0;
+			if (P2charState == P2_PUNCH_IDLE) {
+				damage = punchAnimationP2.getDamageForTime(animationTime); // Check for damage at the current animation time
+			}
+			else if (P2charState == P2_KICK_IDLE) {
+				damage = kickAnimationP2.getDamageForTime(animationTime);
+			}
 
 			if (damage > 0) { // Damage is applied only if the current frame is a damage keyframe
 				// Check if Player 1 is currently blocking
@@ -544,6 +555,10 @@ int main()
 	walkFrontAnimationP1.loadAnimation("Object/Vegas/WalkForward.dae", &player1,1.8f);
 	walkBackAnimationP1.loadAnimation("Object/Vegas/WalkBack.dae", &player1,1.5f);
 	punchAnimationP1.loadAnimation("Object/Vegas/Punch Combo.dae", &player1,1.5f);
+	punchAnimationP1.AddDamageKeyframe(0.5f, P1punchDamage);
+	punchAnimationP1.AddDamageKeyframe(1.0f, P1punchDamage);
+	punchAnimationP1.AddDamageKeyframe(1.5f, P1punchDamage);
+	punchAnimationP1.AddDamageKeyframe(2.0f, P1punchDamage);
 	kickAnimationP1.loadAnimation("Object/Vegas/Kicking.dae", &player1,1.5f);
 	blockAnimationP1.loadAnimation("Object/Vegas/Bouncing Fight Idle.dae", &player1,1.2f);
 	hitAnimationP1.loadAnimation("Object/Vegas/Head Hit.dae", &player1, 1.5f);
@@ -554,9 +569,10 @@ int main()
 	walkFrontAnimationP2.loadAnimation("Object/Wrestler/Walking.dae", &player2, 1.5f);
 	walkBackAnimationP2.loadAnimation("Object/Wrestler/Standing Walk Back.dae", &player2, 1.7f);
 	punchAnimationP2.loadAnimation("Object/Wrestler/Cross Punch.dae", &player2, 1.7f);
-	punchAnimationP2.AddDamageKeyframe(0.5f, P2punchDamage);
+	punchAnimationP2.AddDamageKeyframe(1.5f,P2punchDamage);
 	kickAnimationP2.loadAnimation("Object/Wrestler/Mma Kick.dae", &player2, 1.8f);
 	blockAnimationP2.loadAnimation("Object/Wrestler/Center Block.dae", &player2, 1.5f);
+	hitAnimationP2.loadAnimation("Object/Wrestler/Head Hit.dae", &player2, 1.5f);
 
 
 	pbrShader.use();
@@ -1426,6 +1442,36 @@ void UpdateStateP1(GLFWwindow* window, Animator& animator, AnimStateP1& charStat
 					charState = P2_IDLE;
 				}
 				//printf("block_idle \n");
+			}
+			else {
+				// punching
+				//printf("blocking \n");
+			}
+			break;
+		case  P2_IDLE_HIT:
+			blendAmount += blendRate * 2;
+			blendAmount = fmod(blendAmount, 1.0f);
+			animator.PlayAnimation(&idleAnimationP2, &hitAnimationP2, animator.m_CurrentTime, animator.m_CurrentTime2, blendAmount);
+			if (blendAmount > 0.9f) {
+				blendAmount = 0.0f;
+				float startTime = animator.m_CurrentTime2;
+				animator.PlayAnimation(&hitAnimationP2, NULL, startTime, 0.0f, blendAmount);
+				charState = P2_HIT_IDLE;
+			}
+			//printf("idle_hit\n");
+			break;
+		case  P2_HIT_IDLE:
+			if (animator.m_CurrentTime > 0.7f * hitAnimationP2.GetDuration()) {
+				blendAmount += blendRate;
+				blendAmount = fmod(blendAmount, 1.0f);
+				animator.PlayAnimation(&hitAnimationP2, &idleAnimationP2, animator.m_CurrentTime, animator.m_CurrentTime2, blendAmount);
+				if (blendAmount > 0.7f) {
+					blendAmount = 0.0f;
+					float startTime = animator.m_CurrentTime2;
+					animator.PlayAnimation(&idleAnimationP2, NULL, startTime, 0.0f, blendAmount);
+					charState = P2_IDLE;
+				}
+				//printf("hit_idle \n");
 			}
 			else {
 				// punching
