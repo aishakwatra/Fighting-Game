@@ -368,7 +368,7 @@ bool checkCapsuleCollision(const Capsule& capsule1, const Capsule& capsule2) {
 	return distance < (capsule1.radius + capsule2.radius);
 }
 
-void handleCollisions() {
+void handleCollisions(GLFWwindow* window, float deltaTime) {
 	if (checkCapsuleCollision(player1Capsule, player2Capsule)) {
 		glm::vec3 collisionNormal = glm::normalize(player2Position - player1Position);
 		float overlap = (player1Capsule.radius + player2Capsule.radius) - glm::distance(player1Capsule.pointB, player2Capsule.pointB);
@@ -391,8 +391,11 @@ void handleCollisions() {
 
 			if (damage > 0) { // Damage is applied only if the current frame is a damage keyframe
 				// Check if Player 2 is currently blocking
-				if (P2charState == P2_IDLE_BLOCK) {
+				if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
 					std::cout << "Player 2 blocked the attack!" << std::endl;
+					//player2_animator.PlayAnimation(&idleAnimationP2, &blockAnimationP2, animator.m_CurrentTime, 0.0f, blendAmount);
+					P2charState = P2_IDLE_BLOCK;
+					
 				}
 				else {
 					// Apply damage to Player 2 if not blocking
@@ -421,6 +424,7 @@ void handleCollisions() {
 				// Check if Player 1 is currently blocking
 				if (P1charState == P1_IDLE_BLOCK) {
 					std::cout << "Player 1 blocked the attack!" << std::endl;
+					
 				}
 				else {
 					// Apply damage to Player 1 if not blocking
@@ -571,7 +575,7 @@ int main()
 	punchAnimationP2.loadAnimation("Object/Wrestler/Cross Punch.dae", &player2, 1.7f);
 	punchAnimationP2.AddDamageKeyframe(1.5f,P2punchDamage);
 	kickAnimationP2.loadAnimation("Object/Wrestler/Mma Kick.dae", &player2, 1.8f);
-	blockAnimationP2.loadAnimation("Object/Wrestler/Center Block.dae", &player2, 1.5f);
+	blockAnimationP2.loadAnimation("Object/Wrestler/Left Block.dae", &player2, 1.0f);
 	hitAnimationP2.loadAnimation("Object/Wrestler/Head Hit.dae", &player2, 1.5f);
 
 
@@ -857,7 +861,7 @@ int main()
 			case GAMEPLAY:
 				// Gameplay logic
 				updateCapsules();
-				handleCollisions();
+				handleCollisions(window,deltaTime);
 				UpdateStateP1(window, player1_animator, P1charState, blendAmountP1);
 				UpdateStateP2(window, player2_animator, P2charState, blendAmountP2);
 				timer.update();
@@ -1273,11 +1277,7 @@ void UpdateStateP1(GLFWwindow* window, Animator& animator, AnimStateP1& charStat
 			}
 
 
-			if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
-				blendAmount = 0.0f;
-				animator.PlayAnimation(&idleAnimationP2, &blockAnimationP2, animator.m_CurrentTime, 0.0f, blendAmount);
-				charState = P2_IDLE_BLOCK;
-			}
+			
 			if (glfwGetKey(window, GLFW_KEY_KP_1) == GLFW_PRESS) {
 				blendAmount = 0.0f;
 				animator.PlayAnimation(&idleAnimationP2, &punchAnimationP2, animator.m_CurrentTime, 0.0f, blendAmount);
@@ -1419,7 +1419,7 @@ void UpdateStateP1(GLFWwindow* window, Animator& animator, AnimStateP1& charStat
 			}
 			break;
 		case  P2_IDLE_BLOCK:
-			blendAmount += blendRate;
+			blendAmount += blendRate * 2;
 			blendAmount = fmod(blendAmount, 1.0f);
 			animator.PlayAnimation(&idleAnimationP2, &blockAnimationP2, animator.m_CurrentTime, animator.m_CurrentTime2, blendAmount);
 			if (blendAmount > 0.9f) {
@@ -1431,11 +1431,11 @@ void UpdateStateP1(GLFWwindow* window, Animator& animator, AnimStateP1& charStat
 			//printf("idle_block\n");
 			break;
 		case  P2_BLOCK_IDLE:
-			if (animator.m_CurrentTime > 0.7f * (blockAnimationP2.GetDuration() * 0.5f)) {
+			if (animator.m_CurrentTime > 0.7f * blockAnimationP2.GetDuration()) {
 				blendAmount += blendRate;
 				blendAmount = fmod(blendAmount, 1.0f);
 				animator.PlayAnimation(&blockAnimationP2, &idleAnimationP2, animator.m_CurrentTime, animator.m_CurrentTime2, blendAmount);
-				if (blendAmount > 0.9f) {
+				if (blendAmount > 0.7f) {
 					blendAmount = 0.0f;
 					float startTime = animator.m_CurrentTime2;
 					animator.PlayAnimation(&idleAnimationP2, NULL, startTime, 0.0f, blendAmount);
@@ -1756,7 +1756,7 @@ void initUIRendering() {
 	};
 
 	glGenVertexArrays(1, &uiVAO);
-	glGenBuffers(1, &uiVBO);
+	glGenBuffers(1, &uiVBO); 
 	glBindVertexArray(uiVAO);
 
 	glBindBuffer(GL_ARRAY_BUFFER, uiVBO);
