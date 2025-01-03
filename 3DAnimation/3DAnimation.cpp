@@ -183,9 +183,9 @@ glm::vec3 player1gamePosition = glm::vec3(0.0f, -0.4f, 0.0f);
 glm::vec3 player2gamePosition = glm::vec3(0.0f, -0.4f, 3.0f);
 float moveSpeed = 0.5f;
 int P1punchDamage = 1;
-int P1KickDamage = 2;
-int P2punchDamage = 3;
-int P2KickDamage = 4;
+int P1kickDamage = 4;
+int P2punchDamage = 4;
+int P2kickDamage = 6;
 Animator player1_animator(&idleAnimationP1);
 Animator player2_animator(&idleAnimationP2);
 enum AnimStateP1 P1charState = P1_IDLE;
@@ -422,9 +422,11 @@ void handleCollisions(GLFWwindow* window, float deltaTime) {
 
 			if (damage > 0) { // Damage is applied only if the current frame is a damage keyframe
 				// Check if Player 1 is currently blocking
-				if (P1charState == P1_IDLE_BLOCK) {
+				if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
 					std::cout << "Player 1 blocked the attack!" << std::endl;
-					
+					//player2_animator.PlayAnimation(&idleAnimationP2, &blockAnimationP2, animator.m_CurrentTime, 0.0f, blendAmount);
+					P1charState = P1_IDLE_BLOCK;
+
 				}
 				else {
 					// Apply damage to Player 1 if not blocking
@@ -564,7 +566,8 @@ int main()
 	punchAnimationP1.AddDamageKeyframe(1.5f, P1punchDamage);
 	punchAnimationP1.AddDamageKeyframe(2.0f, P1punchDamage);
 	kickAnimationP1.loadAnimation("Object/Vegas/Kicking.dae", &player1,1.5f);
-	blockAnimationP1.loadAnimation("Object/Vegas/Bouncing Fight Idle.dae", &player1,1.2f);
+	kickAnimationP1.AddDamageKeyframe(0.7f, P1kickDamage);
+	blockAnimationP1.loadAnimation("Object/Vegas/Center Block.dae", &player1,1.2f);
 	hitAnimationP1.loadAnimation("Object/Vegas/Head Hit.dae", &player1, 1.5f);
 
 	player2.loadModel("Object/Wrestler/Ch43_nonPBR.dae");
@@ -572,9 +575,10 @@ int main()
 	idleAnimationP2.loadAnimation("Object/Wrestler/Idle.dae", &player2);
 	walkFrontAnimationP2.loadAnimation("Object/Wrestler/Walking.dae", &player2, 1.5f);
 	walkBackAnimationP2.loadAnimation("Object/Wrestler/Standing Walk Back.dae", &player2, 1.7f);
-	punchAnimationP2.loadAnimation("Object/Wrestler/Cross Punch.dae", &player2, 1.7f);
-	punchAnimationP2.AddDamageKeyframe(1.5f,P2punchDamage);
+	punchAnimationP2.loadAnimation("Object/Wrestler/Cross Punch.dae", &player2, 1.0f);
+	punchAnimationP2.AddDamageKeyframe(0.25f,P2punchDamage);
 	kickAnimationP2.loadAnimation("Object/Wrestler/Mma Kick.dae", &player2, 1.8f);
+	kickAnimationP2.AddDamageKeyframe(0.7f, P2kickDamage);
 	blockAnimationP2.loadAnimation("Object/Wrestler/Left Block.dae", &player2, 1.0f);
 	hitAnimationP2.loadAnimation("Object/Wrestler/Head Hit.dae", &player2, 1.5f);
 
@@ -1048,11 +1052,6 @@ void UpdateStateP1(GLFWwindow* window, Animator& animator, AnimStateP1& charStat
 			animator.PlayAnimation(&idleAnimationP1, &walkBackAnimationP1, animator.m_CurrentTime, 0.0f, blendAmount);
 			charState = P1_IDLE_WALK_BACK;
 		}
-		if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-			blendAmount = 0.0f;
-			animator.PlayAnimation(&idleAnimationP1, &blockAnimationP1, animator.m_CurrentTime, 0.0f, blendAmount);
-			charState = P1_IDLE_BLOCK;
-		}
 		if (glfwGetKey(window, GLFW_KEY_V) == GLFW_PRESS) {
 			blendAmount = 0.0f;
 			animator.PlayAnimation(&idleAnimationP1, &punchAnimationP1, animator.m_CurrentTime, 0.0f, blendAmount);
@@ -1194,10 +1193,10 @@ void UpdateStateP1(GLFWwindow* window, Animator& animator, AnimStateP1& charStat
 		}
 		break;
 	case P1_IDLE_BLOCK:
-		blendAmount += blendRate;
+		blendAmount += blendRate * 2;
 		blendAmount = fmod(blendAmount, 1.0f);
 		animator.PlayAnimation(&idleAnimationP1, &blockAnimationP1, animator.m_CurrentTime, animator.m_CurrentTime2, blendAmount);
-		if (blendAmount > 0.9f) {
+		if (blendAmount > 0.7f) {
 			blendAmount = 0.0f;
 			float startTime = animator.m_CurrentTime2;
 			animator.PlayAnimation(&blockAnimationP1, NULL, startTime, 0.0f, blendAmount);
@@ -1260,7 +1259,6 @@ void UpdateStateP1(GLFWwindow* window, Animator& animator, AnimStateP1& charStat
 	void UpdateStateP2(GLFWwindow* window, Animator& animator, AnimStateP2& charState, float& blendAmount)
 	{
 			
-
 		switch (charState) {
 		case P2_IDLE:
 			if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) {
