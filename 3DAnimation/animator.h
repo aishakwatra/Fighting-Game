@@ -31,14 +31,16 @@ public:
 	void UpdateAnimation(float dt)
 	{
 		m_DeltaTime = dt;
+		m_AnimationTimer += m_DeltaTime * m_CurrentAnimation->GetSpeed();
+		m_AnimationTimer = fmod(m_AnimationTimer, m_CurrentAnimation->GetDuration() / m_CurrentAnimation->GetTicksPerSecond());
 		if (m_CurrentAnimation)
 		{
-			m_CurrentTime += (m_CurrentAnimation->GetTicksPerSecond() * m_CurrentAnimation->GetSpeed()) * dt ;
+			m_CurrentTime += m_CurrentAnimation->GetTicksPerSecond() * dt;
 			m_CurrentTime = fmod(m_CurrentTime, m_CurrentAnimation->GetDuration());
 
 			if (m_CurrentAnimation2)
 			{
-				m_CurrentTime2 += (m_CurrentAnimation2->GetTicksPerSecond() * m_CurrentAnimation2->GetSpeed())  * dt;
+				m_CurrentTime2 += m_CurrentAnimation2->GetTicksPerSecond() * dt;
 				m_CurrentTime2 = fmod(m_CurrentTime2, m_CurrentAnimation2->GetDuration());
 			}
 
@@ -53,6 +55,7 @@ public:
 		m_CurrentAnimation2 = pAnimation2;
 		m_CurrentTime2 = time2;
 		m_blendAmount = blend;
+		m_AnimationTimer = 0.0f;
 
 	}
 
@@ -136,6 +139,10 @@ public:
 		return m_CurrentTime;
 	}
 
+	float getCurrentAnimationTime() const {
+		return m_AnimationTimer; // Return the custom animation timer for checking keyframes
+	}
+
 	// Getter for the current time of the secondary animation
 	float getCurrentTime2() const {
 		return m_CurrentTime2;
@@ -155,5 +162,6 @@ public:
 	float m_DeltaTime;
 	float m_blendAmount;
 	float m_speed;
+	float m_AnimationTimer;
 
 };
