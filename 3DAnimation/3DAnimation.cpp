@@ -76,9 +76,6 @@ struct Capsule {
 Capsule player1Capsule;
 Capsule player2Capsule;
 
-int player1Health = MAX_HEALTH;
-int player2Health = MAX_HEALTH;
-
 CountdownTimer timer;
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
@@ -187,11 +184,25 @@ float blendAmountP1 = 0.0f;
 float blendAmountP2 = 0.0f;
 float blendRate = 0.055f;
 
+//UI ANIMATION VARIABLES
+
+const float shakeDuration = 0.5f;
+const float shakeIntensity = 3.0f; 
+
+struct HealthBar {
+	float health;         // Current health
+	float shakeTimer;     // Timer for shake effect
+	glm::vec2 position;   // Position of the health bar
+	glm::vec2 size;       // Size of the health bar
+};
+
+HealthBar player1HealthBar = { MAX_HEALTH, 0.0f, glm::vec2(50.0f, SCR_HEIGHT - 100.0f), glm::vec2(400.0f, 40.0f) };
+HealthBar player2HealthBar = { MAX_HEALTH, 0.0f, glm::vec2(SCR_WIDTH - 450.0f, SCR_HEIGHT - 100.0f), glm::vec2(400.0f, 40.0f) };
+
+
 float lerp(float start, float end, float t) {
 	return start + t * (end - start);
 }
-
-
 
 void setupIntro() {
 	// Only start Player 1's intro animation initially
@@ -387,11 +398,17 @@ void handleCollisions() {
 			}
 			else {
 				// Apply damage to Player 2 if not blocking
-				player2Health -= damage;
-				std::cout << "Player 2 hit! Health now: " << player2Health << std::endl;
-				if (player2Health <= 0) {
+				
+				//player2Health -= damage;
+				player2HealthBar.health -= damage;
+
+				std::cout << "Player 2 hit! Health now: " << player1HealthBar.health << std::endl;
+				if (player2HealthBar.health <= 0) {
 					std::cout << "Player 2 has been defeated!" << std::endl;
 				}
+
+				player2HealthBar.shakeTimer = shakeDuration;
+
 			}
 		}
 
@@ -411,11 +428,17 @@ void handleCollisions() {
 			}
 			else {
 				// Apply damage to Player 1 if not blocking
-				player1Health -= damage;
-				std::cout << "Player 1 hit! Health now: " << player1Health << std::endl;
-				if (player1Health <= 0) {
+				
+				//player1Health -= damage;
+				player1HealthBar.health -= damage;
+
+				std::cout << "Player 1 hit! Health now: " << player1HealthBar.health << std::endl;
+				if (player1HealthBar.health <= 0) {
 					std::cout << "Player 1 has been defeated!" << std::endl;
 				}
+
+				player1HealthBar.shakeTimer = shakeDuration;
+
 			}
 		}
 	}
@@ -423,27 +446,46 @@ void handleCollisions() {
 
 void RenderHealthBars(Shader& shader, unsigned int texture) {
 
-	// Maximum width of the health bar
+
 	const float maxBarWidth = 400.0f;
 
-	// Calculate the dynamic width based on the health ratio
-	float player1HealthRatio = (float)player1Health / MAX_HEALTH; 
-	float player2HealthRatio = (float)player2Health / MAX_HEALTH;
+	// Calculate the dynamic width based on the health ratio for both players
+	float player1HealthRatio = static_cast<float>(player1HealthBar.health) / MAX_HEALTH;
+	float player2HealthRatio = static_cast<float>(player2HealthBar.health) / MAX_HEALTH;
 
 	float player1BarWidth = maxBarWidth * player1HealthRatio;
 	float player2BarWidth = maxBarWidth * player2HealthRatio;
 
-	// Adjust the position for Player 1's health bar
-	float player1BarX = 50.0f; // Left side stays fixed
+	// Calculate shaking offset for Player 1's health bar
+	float player1ShakeOffsetY = 0.0f;
+	if (player1HealthBar.shakeTimer > 0.0f) {
+		player1ShakeOffsetY = shakeIntensity * sin(20.0f * glfwGetTime());
+		player1HealthBar.shakeTimer -= deltaTime; // Reduce shake timer
+		if (player1HealthBar.shakeTimer < 0.0f) player1HealthBar.shakeTimer = 0.0f; // Clamp to 0
+	}
 
-	// Adjust the position for Player 2's health bar
-	float player2BarX = SCR_WIDTH - (player1BarX + maxBarWidth) + (maxBarWidth - player2BarWidth); // Right side stays fixed
+	// Adjust the position for Player 1's health bar (fixed left)
+	float player1BarX = 50.0f;
+	float player1BarY = SCR_HEIGHT - 100.0f + player1ShakeOffsetY;
 
 	// Render Player 1's health bar
-	RenderUIElement(shader, texture, player1BarX, SCR_HEIGHT - 100.0f, player1BarWidth, 40.0f);
+	RenderUIElement(shader, texture, player1BarX, player1BarY, player1BarWidth, 40.0f);
+
+	// Calculate shaking offset for Player 2's health bar
+	float player2ShakeOffsetY = 0.0f;
+	if (player2HealthBar.shakeTimer > 0.0f) {
+		player2ShakeOffsetY = shakeIntensity * sin(20.0f * glfwGetTime()); // Oscillating shake effect
+		player2HealthBar.shakeTimer -= deltaTime; // Reduce shake timer
+		if (player2HealthBar.shakeTimer < 0.0f) player2HealthBar.shakeTimer = 0.0f; // Clamp to 0
+	}
+
+	// Adjust the position for Player 2's health bar (fixed right)
+	float player2BarX = SCR_WIDTH - (player1BarX + maxBarWidth) + (maxBarWidth - player2BarWidth);
+	float player2BarY = SCR_HEIGHT - 100.0f + player2ShakeOffsetY;
 
 	// Render Player 2's health bar
-	RenderUIElement(shader, texture, player2BarX, SCR_HEIGHT - 100.0f, player2BarWidth, 40.0f);
+	RenderUIElement(shader, texture, player2BarX, player2BarY, player2BarWidth, 40.0f);
+
 
 }
 
@@ -552,7 +594,7 @@ int main()
 	kickAnimationP2.loadAnimation("Object/Wrestler/Mma Kick.dae", &player2, 1.8f);
 	blockAnimationP2.loadAnimation("Object/Wrestler/Center Block.dae", &player2, 1.5f);
 
-	Model Car("Object/Car/CarBody2.obj");
+	Model Scene("Object/Scene/Snowtown.obj");
 
 	pbrShader.use();
 	pbrShader.setInt("irradianceMap", 0);
@@ -819,7 +861,7 @@ int main()
 
 		// input
 		// -----
-		//processInput(window);
+		processInput(window);
 		if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
 			glfwSetWindowShouldClose(window, true);
 
@@ -868,10 +910,10 @@ int main()
 		glBindTexture(GL_TEXTURE_2D, brdfLUTTexture);
 
 		//--------------PBR--------------------
-		//glm::mat4 model = glm::mat4(1.0f);
-		//pbrShader.setMat4("model", glm::transpose(glm::inverse(glm::mat3(model))));
-		//pbrShader.setMat3("normalMatrix", glm::transpose(glm::inverse(glm::mat3(model))));
-		//Car.Draw(pbrShader);
+		/*glm::mat4 model = glm::mat4(1.0f);
+		pbrShader.setMat4("model", glm::transpose(glm::inverse(glm::mat3(model))));
+		pbrShader.setMat3("normalMatrix", glm::transpose(glm::inverse(glm::mat3(model))));
+		Scene.Draw(pbrShader);*/
 
 		// don't forget to enable shader before setting uniforms
 		ourShader.use();
@@ -923,8 +965,6 @@ int main()
 			RenderText(textShader, timerText, (SCR_WIDTH / 2.0f) - 20.0f , static_cast<float>(SCR_HEIGHT) - 100.0f, 1.0f, glm::vec3(1.0f, 1.0f, 1.0f));
 
 		}
-		
-
 		
 
 
