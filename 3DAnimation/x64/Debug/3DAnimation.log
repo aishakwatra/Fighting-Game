@@ -10,19 +10,22 @@ C:\Users\user\Documents\GitHub\Fighting-Game-OpenGL\3DAnimation\animation.h(72,4
 C:\Users\user\Documents\GitHub\Fighting-Game-OpenGL\3DAnimation\animation.h(105,44): warning C4244: 'return': conversion from 'int' to 'float', possible loss of data
 C:\Users\user\Documents\GitHub\Fighting-Game-OpenGL\3DAnimation\animation.h(148,21): warning C4018: '<': signed/unsigned mismatch
 C:\Users\user\Documents\GitHub\Fighting-Game-OpenGL\3DAnimation\3DAnimation.cpp(143,34): warning C4305: 'initializing': truncation from 'double' to 'float'
-C:\Users\user\Documents\GitHub\Fighting-Game-OpenGL\3DAnimation\3DAnimation.cpp(485,16): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-C:\Users\user\Documents\GitHub\Fighting-Game-OpenGL\3DAnimation\3DAnimation.cpp(486,16): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-C:\Users\user\Documents\GitHub\Fighting-Game-OpenGL\3DAnimation\3DAnimation.cpp(582,40): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-C:\Users\user\Documents\GitHub\Fighting-Game-OpenGL\3DAnimation\3DAnimation.cpp(597,40): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-C:\Users\user\Documents\GitHub\Fighting-Game-OpenGL\3DAnimation\3DAnimation.cpp(984,22): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-C:\Users\user\Documents\GitHub\Fighting-Game-OpenGL\3DAnimation\3DAnimation.cpp(1160,11): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-C:\Users\user\Documents\GitHub\Fighting-Game-OpenGL\3DAnimation\3DAnimation.cpp(1161,11): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-C:\Users\user\Documents\GitHub\Fighting-Game-OpenGL\3DAnimation\3DAnimation.cpp(1165,16): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-C:\Users\user\Documents\GitHub\Fighting-Game-OpenGL\3DAnimation\3DAnimation.cpp(1166,16): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-C:\Users\user\Documents\GitHub\Fighting-Game-OpenGL\3DAnimation\3DAnimation.cpp(1168,10): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-C:\Users\user\Documents\GitHub\Fighting-Game-OpenGL\3DAnimation\3DAnimation.cpp(1169,10): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-C:\Users\user\Documents\GitHub\Fighting-Game-OpenGL\3DAnimation\3DAnimation.cpp(1181,28): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+C:\Users\user\Documents\GitHub\Fighting-Game-OpenGL\3DAnimation\3DAnimation.cpp(480,16): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\user\Documents\GitHub\Fighting-Game-OpenGL\3DAnimation\3DAnimation.cpp(481,16): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\user\Documents\GitHub\Fighting-Game-OpenGL\3DAnimation\3DAnimation.cpp(577,40): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\user\Documents\GitHub\Fighting-Game-OpenGL\3DAnimation\3DAnimation.cpp(592,40): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\user\Documents\GitHub\Fighting-Game-OpenGL\3DAnimation\3DAnimation.cpp(993,22): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+C:\Users\user\Documents\GitHub\Fighting-Game-OpenGL\3DAnimation\3DAnimation.cpp(1169,11): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\user\Documents\GitHub\Fighting-Game-OpenGL\3DAnimation\3DAnimation.cpp(1170,11): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\user\Documents\GitHub\Fighting-Game-OpenGL\3DAnimation\3DAnimation.cpp(1174,16): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+C:\Users\user\Documents\GitHub\Fighting-Game-OpenGL\3DAnimation\3DAnimation.cpp(1175,16): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+C:\Users\user\Documents\GitHub\Fighting-Game-OpenGL\3DAnimation\3DAnimation.cpp(1177,10): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\user\Documents\GitHub\Fighting-Game-OpenGL\3DAnimation\3DAnimation.cpp(1178,10): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\user\Documents\GitHub\Fighting-Game-OpenGL\3DAnimation\3DAnimation.cpp(1190,28): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
 C:\Users\user\Documents\GitHub\Fighting-Game-OpenGL\3DAnimation\bone.h(98): warning C4715: 'Bone::GetPositionIndex': not all control paths return a value
 C:\Users\user\Documents\GitHub\Fighting-Game-OpenGL\3DAnimation\bone.h(108): warning C4715: 'Bone::GetRotationIndex': not all control paths return a value
 C:\Users\user\Documents\GitHub\Fighting-Game-OpenGL\3DAnimation\bone.h(118): warning C4715: 'Bone::GetScaleIndex': not all control paths return a value
+glfw3.lib(input.obj) : warning LNK4099: PDB '' was not found with 'glfw3.lib(input.obj)' or at ''; linking object as if no debug info
+glfw3.lib(window.obj) : warning LNK4099: PDB '' was not found with 'glfw3.lib(window.obj)' or at ''; linking object as if no debug info
+glfw3.lib(win32_joystick.obj) : warning LNK4099: PDB '' was not found with 'glfw3.lib(win32_joystick.obj)' or at ''; linking object as if no debug info
   3DAnimation.vcxproj -> C:\Users\user\Documents\GitHub\Fighting-Game-OpenGL\x64\Debug\3DAnimation.exe

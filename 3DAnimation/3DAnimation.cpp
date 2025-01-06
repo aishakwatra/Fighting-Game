@@ -195,10 +195,9 @@ float blendAmountP1 = 0.0f;
 float blendAmountP2 = 0.0f;
 float blendRate = 0.055f;
 
-//UI ANIMATION VARIABLES
-
 const float shakeDuration = 0.5f;
-const float shakeIntensity = 3.0f; 
+const float shakeIntensity = 3.0f;
+
 
 struct HealthBar {
 	float health;         // Current health
@@ -219,11 +218,6 @@ glm::vec3 lerpVec3(const glm::vec3& start, const glm::vec3& end, float t) {
 	return start + t * (end - start);
 }
 
-void setupIntro() {
-	// Only start Player 1's intro animation initially
-	player1_animator.PlayAnimation(&introAnimationP1, nullptr, 0.0f, 0.0f, 0.0f);
-}
-
 
 void updateIntroCamera(GLFWwindow* window, float deltaTime) {
 
@@ -237,16 +231,6 @@ void updateIntroCamera(GLFWwindow* window, float deltaTime) {
 	if (currentState == GAME_INTRO) {
 
 		introTimer += deltaTime;
-
-		player2Position = player2gamePosition;
-		player1Position = player1gamePosition;
-		camera.Yaw = gameCamYaw;
-		camera.Pitch = gameCamPitch;
-		camera.Position = gameCamPos;
-		camera.updateCameraVectors();
-
-		player1_animator.PlayAnimation(&idleAnimationP1, nullptr, 0.0f, 0.0f, 0.0f);
-		player2_animator.PlayAnimation(&idleAnimationP2, nullptr, 0.0f, 0.0f, 0.0f);
 
 		// Transition to INTRO_P1 state
 		if (introTimer >= 10.0f || glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
@@ -334,7 +318,64 @@ void updateIntroCamera(GLFWwindow* window, float deltaTime) {
 
 }
 
-void updateText() {
+void updateText(Shader& textShader, float deltaTime) {
+
+	static float elapsedTime = 0.0f; // Track elapsed time for animations
+	elapsedTime += deltaTime;
+
+	glm::vec3 whiteColor = glm::vec3(1.0f, 1.0f, 1.0f);
+
+	if (currentState == GAME_INTRO) {
+
+		// Game Intro - Slam effect
+		static float gameNameScale = 15.0f; // Start extremely large
+		static float slamTimer = 0.0f;
+		const float minScale = 1.0f;        // Normal size after the slam
+		const float slamDuration = 15.0f;   // Duration of the slam effect
+		const float slamSpeed = 2.0f;     // Speed of the scaling down
+
+		// Slam animation
+		if (elapsedTime < slamDuration) {
+			gameNameScale = glm::max(minScale, gameNameScale - deltaTime * slamSpeed);
+		}
+	
+		RenderText(textShader, "GAME NAME", SCR_WIDTH / 2 - 150, SCR_HEIGHT / 2, gameNameScale, whiteColor);
+
+	}
+	else if (currentState == INTRO_P1) {
+
+		elapsedTime = 0.0f;
+
+		//Slice in from the left
+		static float player1X = -500.0f; // Off-screen start
+		const float targetX = 50.0f;     // Final position
+		const float speed = 300.0f;      // Sliding speed
+
+		player1X = glm::min(player1X + speed * deltaTime, targetX); // Slide in
+
+		RenderText(textShader, "PLAYER 1", player1X, SCR_HEIGHT - 150, 1.0f, whiteColor);
+
+	}
+	else if (currentState == INTRO_P2) {
+
+		elapsedTime = 0.0f;
+
+		// Slice in from the right
+		static float player2X = SCR_WIDTH + 500.0f; // Off-screen start
+		const float targetX = SCR_WIDTH - 200.0f;   // Final position
+		const float speed = 300.0f;                 // Sliding speed
+
+		player2X = glm::max(player2X - speed * deltaTime, targetX);
+
+		RenderText(textShader, "PLAYER 2", player2X, SCR_HEIGHT - 150, 1.0f, whiteColor);
+
+	}
+	else if (currentState == COUNTDOWN) {
+
+		RenderText(textShader, "countdown", SCR_WIDTH / 2 - 150, SCR_HEIGHT / 2, 1.5f, glm::vec3(1.0f, 1.0f, 1.0f));
+
+	}
+
 
 }
 
@@ -690,7 +731,9 @@ int main()
 	backgroundShader.use();
 	backgroundShader.setInt("environmentMap", 0);
 
-	initTextRendering("Textures/Fonts/Roboto-Bold.ttf");
+	//initTextRendering("Textures/Fonts/Roboto-Bold.ttf");
+
+	initTextRendering("Textures/Fonts/Cybergame-Regular Italic.ttf");
 	glm::mat4 projection = glm::ortho(0.0f, static_cast<float>(SCR_WIDTH), 0.0f, static_cast<float>(SCR_HEIGHT));
 	textShader.use();
 	glUniformMatrix4fv(glGetUniformLocation(textShader.ID, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
@@ -915,12 +958,24 @@ int main()
 		pbrShader.setVec3("lightColors[" + std::to_string(i) + "]", lightColors[i]);
 	}
 
-	//setupIntro();
+	
+	
+	//INITIAL STATES FOR GAME INTRO
+	//---------------------------------------------------------------
 
-	//camera.Yaw = introP1camYaw;
-	//camera.Pitch = introP1camPitch;
+	player1_animator.PlayAnimation(&idleAnimationP1, nullptr, 0.0f, 0.0f, 0.0f);
+	player2_animator.PlayAnimation(&idleAnimationP2, nullptr, 0.0f, 0.0f, 0.0f);
 
-	//camera.updateCameraVectors();
+	player2Position = player2gamePosition;
+	player1Position = player1gamePosition;
+	camera.Yaw = gameCamYaw;
+	camera.Pitch = gameCamPitch;
+	camera.Position = gameCamPos;
+	camera.updateCameraVectors();
+
+	//---------------------------------------------------------------
+
+
 	// draw in wireframe
 	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	
@@ -957,6 +1012,7 @@ int main()
 		case INTRO_P1:
 		case INTRO_P2:
 			updateIntroCamera(window, deltaTime);
+			updateText(textShader, deltaTime);
 			break;
 		case COUNTDOWN:
 			startCountdown(deltaTime);
