@@ -55,6 +55,7 @@ enum AnimStateP2 {
 };
 
 enum GameState {
+	GAME_INTRO,
 	INTRO_P1,
 	INTRO_P2,
 	COUNTDOWN,
@@ -63,7 +64,7 @@ enum GameState {
 	RESTART
 };
 
-GameState currentState = INTRO_P1;
+GameState currentState = GAME_INTRO;
 
 bool gameStart = false;
 float introTimer = 0.0f;
@@ -136,6 +137,7 @@ const unsigned int SCR_HEIGHT = 800;
 // camera
 float near_plane = 0.1f, far_plane = 200.0f;
 Camera camera(glm::vec3(0.007200f, 0.370334f,0.963989f));
+glm::vec3 introCamPos = glm::vec3(0.007200f, 0.370334f, 0.963989f);
 glm::vec3 gameCamPos = glm::vec3(-3.821124f, 0.010320f, 1.682272f);
 float introP1camYaw = -89.199913f;
 float introP1camPitch = -7.599974;
@@ -172,10 +174,14 @@ Animation kickAnimationP2;
 Animation blockAnimationP2;
 Animation hitAnimationP2;
 
-glm::vec3 player1Position = glm::vec3(0.0f, -0.4f, -2.0f);
-glm::vec3 player2Position = glm::vec3(0.0f, -0.4f, 5.0f);
+glm::vec3 player1Position = glm::vec3(0.0f, -0.4f, 0.0f);
+glm::vec3 player2Position = glm::vec3(0.0f, -0.4f, 3.0f);
+
+glm::vec3 player1IntroPosition = glm::vec3(0.0f, -0.4f, -2.0f);
+glm::vec3 player2IntroPosition = glm::vec3(0.0f, -0.4f, 5.0f);
 glm::vec3 player1gamePosition = glm::vec3(0.0f, -0.4f, 0.0f);
 glm::vec3 player2gamePosition = glm::vec3(0.0f, -0.4f, 3.0f);
+
 float moveSpeed = 0.5f;
 int P1punchDamage = 1;
 int P1KickDamage = 2;
@@ -209,29 +215,91 @@ float lerp(float start, float end, float t) {
 	return start + t * (end - start);
 }
 
+glm::vec3 lerpVec3(const glm::vec3& start, const glm::vec3& end, float t) {
+	return start + t * (end - start);
+}
+
 void setupIntro() {
 	// Only start Player 1's intro animation initially
 	player1_animator.PlayAnimation(&introAnimationP1, nullptr, 0.0f, 0.0f, 0.0f);
 }
 
 
-void updateIntro(GLFWwindow* window, float deltaTime) {
+void updateIntroCamera(GLFWwindow* window, float deltaTime) {
+
 	float introDurationP1 = introAnimationP1.GetDuration() / 1000.0f; // Convert ms to seconds
 	float introDurationP2 = introAnimationP2.GetDuration() / 1000.0f; // Convert ms to seconds
 	static float transitionDuration = 1.0f; // Duration of the camera transition
 	static float transitionTimer = 0.0f; // Timer for the camera transition
+	
+	static float introTimer = 0.0f;
 
-	if (currentState == INTRO_P1) {
+	if (currentState == GAME_INTRO) {
+
 		introTimer += deltaTime;
-		if (introTimer >= introDurationP2 || glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
+
+		player2Position = player2gamePosition;
+		player1Position = player1gamePosition;
+		camera.Yaw = gameCamYaw;
+		camera.Pitch = gameCamPitch;
+		camera.Position = gameCamPos;
+		camera.updateCameraVectors();
+
+		player1_animator.PlayAnimation(&idleAnimationP1, nullptr, 0.0f, 0.0f, 0.0f);
+		player2_animator.PlayAnimation(&idleAnimationP2, nullptr, 0.0f, 0.0f, 0.0f);
+
+		// Transition to INTRO_P1 state
+		if (introTimer >= 10.0f || glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
+			currentState = INTRO_P1;
+			introTimer = 0.0f;
+			transitionTimer = 0.0f;
+			player1_animator.PlayAnimation(&introAnimationP1, nullptr, 0.0f, 0.0f, 0.0f);
+			player2_animator.PlayAnimation(&idleAnimationP2, nullptr, 0.0f, 0.0f, 0.0f);
+
+		}
+
+	}
+	else if (currentState == INTRO_P1) {
+
+		introTimer += deltaTime;
+	
+		camera.Yaw = introP1camYaw;
+		camera.Pitch = introP1camPitch;
+		camera.Position = introCamPos;
+		camera.updateCameraVectors();
+
+		player1Position = player1IntroPosition;
+		player2Position = player2IntroPosition;
+
+		if (transitionTimer < transitionDuration) {
+			// Perform the interpolation
+			float t = transitionTimer / transitionDuration;
+			camera.Yaw = lerp(gameCamYaw, introP1camYaw, t);
+			camera.Pitch = lerp(gameCamPitch, introP1camPitch, t);
+			camera.Position = lerpVec3(gameCamPos, introCamPos, t);
+			camera.updateCameraVectors();
+			transitionTimer += deltaTime;
+		}
+		else {
+			// Ensure the final values are set after interpolation
+			camera.Yaw = introP1camYaw;
+			camera.Pitch = introP1camPitch;
+			camera.Position = introCamPos;
+			camera.updateCameraVectors();
+		}
+
+
+		if (introTimer >= introDurationP1 || glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
 			currentState = INTRO_P2;
 			introTimer = 0.0f;
 			transitionTimer = 0.0f; // Reset transition timer
 			player1_animator.PlayAnimation(&idleAnimationP1, nullptr, 0.0f, 0.0f, 0.0f);
 			player2_animator.PlayAnimation(&introAnimationP2, nullptr, 0.0f, 0.0f, 0.0f);
 		}
+
 	}
 	else if (currentState == INTRO_P2) {
+
 		if (transitionTimer < transitionDuration) {
 			// Perform the interpolation
 			float t = transitionTimer / transitionDuration;
@@ -248,6 +316,7 @@ void updateIntro(GLFWwindow* window, float deltaTime) {
 		}
 
 		introTimer += deltaTime;
+
 		if (introTimer >= introDurationP2 || glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) { // End intro slightly earlier to blend to countdown
 			// Reset positions and camera after intro
 			player2Position = player2gamePosition; // Reset to game position
@@ -262,6 +331,10 @@ void updateIntro(GLFWwindow* window, float deltaTime) {
 			introTimer = 0.0f;
 		}
 	}
+
+}
+
+void updateText() {
 
 }
 
@@ -448,7 +521,6 @@ void handleCollisions() {
 
 void RenderHealthBars(Shader& shader, unsigned int texture) {
 
-
 	const float maxBarWidth = 400.0f;
 
 	// Calculate the dynamic width based on the health ratio for both players
@@ -534,7 +606,12 @@ int main()
 	}
 	glfwMakeContextCurrent(window);
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-	glfwSetCursorPosCallback(window, mouse_callback);
+
+	if (currentState >= GAMEPLAY) {
+		glfwSetCursorPosCallback(window, mouse_callback);
+	}
+		
+
 	glfwSetScrollCallback(window, scroll_callback);
 
 	// tell GLFW to capture our mouse
@@ -838,12 +915,12 @@ int main()
 		pbrShader.setVec3("lightColors[" + std::to_string(i) + "]", lightColors[i]);
 	}
 
-	setupIntro();
+	//setupIntro();
 
-	camera.Yaw = introP1camYaw;
-	camera.Pitch = introP1camPitch;
+	//camera.Yaw = introP1camYaw;
+	//camera.Pitch = introP1camPitch;
 
-	camera.updateCameraVectors();
+	//camera.updateCameraVectors();
 	// draw in wireframe
 	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	
@@ -870,32 +947,32 @@ int main()
 			glfwSetWindowShouldClose(window, true);
 
 
-
-		switch (currentState) {
-			case INTRO_P1:
-			case INTRO_P2:
-				updateIntro(window, deltaTime);
-				break;
-			case COUNTDOWN:
-				startCountdown(deltaTime);
-				break;
-			case GAMEPLAY:
-				// Gameplay logic
-				updateCapsules();
-				handleCollisions();
-				UpdateStateP1(window, player1_animator, P1charState, blendAmountP1);
-				UpdateStateP2(window, player2_animator, P2charState, blendAmountP2);
-				timer.update();
-				break;
-		}
-
-		player1_animator.UpdateAnimation(deltaTime);
-		player2_animator.UpdateAnimation(deltaTime);
-
 		// render
 		// ------
 		glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		switch (currentState) {
+		case GAME_INTRO:
+		case INTRO_P1:
+		case INTRO_P2:
+			updateIntroCamera(window, deltaTime);
+			break;
+		case COUNTDOWN:
+			startCountdown(deltaTime);
+			break;
+		case GAMEPLAY:
+			// Gameplay logic
+			updateCapsules();
+			handleCollisions();
+			UpdateStateP1(window, player1_animator, P1charState, blendAmountP1);
+			UpdateStateP2(window, player2_animator, P2charState, blendAmountP2);
+			timer.update();
+			break;
+		}
+
+		player1_animator.UpdateAnimation(deltaTime);
+		player2_animator.UpdateAnimation(deltaTime);
 
 		pbrShader.use();
 
@@ -969,6 +1046,8 @@ int main()
 			RenderText(textShader, timerText, (SCR_WIDTH / 2.0f) - 20.0f , static_cast<float>(SCR_HEIGHT) - 100.0f, 1.0f, glm::vec3(1.0f, 1.0f, 1.0f));
 
 		}
+
+		
 		
 
 
@@ -1027,6 +1106,8 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 // -------------------------------------------------------
 void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 {
+
+
 	if (firstMouse)
 	{
 		lastX = xpos;
@@ -1040,7 +1121,10 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 	lastX = xpos;
 	lastY = ypos;
 
-	camera.ProcessMouseMovement(xoffset, yoffset);
+	if (currentState >= GAMEPLAY) {
+		camera.ProcessMouseMovement(xoffset, yoffset);
+	}
+
 }
 
 // glfw: whenever the mouse scroll wheel scrolls, this callback is called
