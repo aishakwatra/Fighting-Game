@@ -181,7 +181,7 @@ glm::vec3 player1Position = glm::vec3(0.0f, -0.4f, -2.0f);
 glm::vec3 player2Position = glm::vec3(0.0f, -0.4f, 5.0f);
 glm::vec3 player1gamePosition = glm::vec3(0.0f, -0.4f, 0.0f);
 glm::vec3 player2gamePosition = glm::vec3(0.0f, -0.4f, 3.0f);
-float moveSpeed = 0.5f;
+float moveSpeed = 0.7f;
 int P1punchDamage = 1;
 int P1kickDamage = 4;
 int P2punchDamage = 4;
@@ -558,8 +558,8 @@ int main()
 	player1.loadModel("Object/Vegas/Big Vegas.dae");
 	introAnimationP1.loadAnimation("Object/Vegas/Step Hip Hop Dance.dae",&player1);
 	idleAnimationP1.loadAnimation("Object/Vegas/Idle.dae",&player1);
-	walkFrontAnimationP1.loadAnimation("Object/Vegas/WalkForward.dae", &player1,1.8f);
-	walkBackAnimationP1.loadAnimation("Object/Vegas/WalkBack.dae", &player1,1.5f);
+	walkFrontAnimationP1.loadAnimation("Object/Vegas/WalkForward.dae", &player1,3.0f);
+	walkBackAnimationP1.loadAnimation("Object/Vegas/WalkBack.dae", &player1,3.0f);
 	punchAnimationP1.loadAnimation("Object/Vegas/Punch Combo.dae", &player1,1.5f);
 	punchAnimationP1.AddDamageKeyframe(0.5f, P1punchDamage);
 	punchAnimationP1.AddDamageKeyframe(1.0f, P1punchDamage);
@@ -572,9 +572,9 @@ int main()
 
 	player2.loadModel("Object/Wrestler/Ch43_nonPBR.dae");
 	introAnimationP2.loadAnimation("Object/Wrestler/Catwalk Walk.dae", &player2);
-	idleAnimationP2.loadAnimation("Object/Wrestler/Idle.dae", &player2);
-	walkFrontAnimationP2.loadAnimation("Object/Wrestler/Walking.dae", &player2, 1.5f);
-	walkBackAnimationP2.loadAnimation("Object/Wrestler/Standing Walk Back.dae", &player2, 1.7f);
+	idleAnimationP2.loadAnimation("Object/Wrestler/Fighting Idle.dae", &player2);
+	walkFrontAnimationP2.loadAnimation("Object/Wrestler/Walking.dae", &player2, 3.0f);
+	walkBackAnimationP2.loadAnimation("Object/Wrestler/Walking Backwards.dae", &player2, 1.0f);
 	punchAnimationP2.loadAnimation("Object/Wrestler/Cross Punch.dae", &player2, 1.0f);
 	punchAnimationP2.AddDamageKeyframe(0.25f,P2punchDamage);
 	kickAnimationP2.loadAnimation("Object/Wrestler/Mma Kick.dae", &player2, 1.8f);
