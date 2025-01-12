@@ -98,8 +98,16 @@ void main()
     albedo = (albedo == vec3(0.0)) ? vec3(1.0) : albedo;
     albedo = pow(albedo, vec3(2.2)); 
 
-    float roughness = 0.8f;
+    float roughness = 1.0f;
 
+    if(albedo.r <= 0.1 && albedo.g <= 0.5 && albedo.b <= 0.1)
+    {
+        roughness = 1.0;
+    }
+    else
+    {
+        roughness =0.2f;
+    }
 
     // Metallic (default to 0.0 - non-metallic)
     float metallic = texture(metallicMap, TexCoords).r;

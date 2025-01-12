@@ -57,7 +57,6 @@ enum AnimStateP2 {
 };
 
 enum GameState {
-	GAME_INTRO,
 	INTRO_P1,
 	INTRO_P2,
 	COUNTDOWN,
@@ -66,7 +65,7 @@ enum GameState {
 	RESTART
 };
 
-GameState currentState = GAME_INTRO;
+GameState currentState = INTRO_P1;
 
 bool gameStart = false;
 float introTimer = 0.0f;
@@ -81,6 +80,9 @@ struct Capsule {
 
 Capsule player1Capsule;
 Capsule player2Capsule;
+
+int player1Health = MAX_HEALTH;
+int player2Health = MAX_HEALTH;
 
 CountdownTimer timer;
 
@@ -139,7 +141,6 @@ const unsigned int SCR_HEIGHT = 800;
 // camera
 float near_plane = 0.1f, far_plane = 200.0f;
 Camera camera(glm::vec3(0.007200f, 0.370334f,0.963989f));
-glm::vec3 introCamPos = glm::vec3(0.007200f, 0.370334f, 0.963989f);
 glm::vec3 gameCamPos = glm::vec3(-3.821124f, 0.010320f, 1.682272f);
 float introP1camYaw = -89.199913f;
 float introP1camPitch = -7.599974;
@@ -176,11 +177,8 @@ Animation kickAnimationP2;
 Animation blockAnimationP2;
 Animation hitAnimationP2;
 
-glm::vec3 player1Position = glm::vec3(0.0f, -0.4f, 0.0f);
-glm::vec3 player2Position = glm::vec3(0.0f, -0.4f, 3.0f);
-
-glm::vec3 player1IntroPosition = glm::vec3(0.0f, -0.4f, -2.0f);
-glm::vec3 player2IntroPosition = glm::vec3(0.0f, -0.4f, 5.0f);
+glm::vec3 player1Position = glm::vec3(0.0f, -0.4f, -2.0f);
+glm::vec3 player2Position = glm::vec3(0.0f, -0.4f, 5.0f);
 glm::vec3 player1gamePosition = glm::vec3(0.0f, -0.4f, 0.0f);
 glm::vec3 player2gamePosition = glm::vec3(0.0f, -0.4f, 3.0f);
 float moveSpeed = 0.7f;
@@ -196,95 +194,35 @@ float blendAmountP1 = 0.0f;
 float blendAmountP2 = 0.0f;
 float blendRate = 0.055f;
 
-const float shakeDuration = 0.5f;
-const float shakeIntensity = 3.0f;
-
-
-struct HealthBar {
-	float health;         // Current health
-	float shakeTimer;     // Timer for shake effect
-	glm::vec2 position;   // Position of the health bar
-	glm::vec2 size;       // Size of the health bar
-};
-
-HealthBar player1HealthBar = { MAX_HEALTH, 0.0f, glm::vec2(50.0f, SCR_HEIGHT - 100.0f), glm::vec2(400.0f, 40.0f) };
-HealthBar player2HealthBar = { MAX_HEALTH, 0.0f, glm::vec2(SCR_WIDTH - 450.0f, SCR_HEIGHT - 100.0f), glm::vec2(400.0f, 40.0f) };
-
-
 float lerp(float start, float end, float t) {
 	return start + t * (end - start);
 }
 
-glm::vec3 lerpVec3(const glm::vec3& start, const glm::vec3& end, float t) {
-	return start + t * (end - start);
+
+
+void setupIntro() {
+	// Only start Player 1's intro animation initially
+	player1_animator.PlayAnimation(&introAnimationP1, nullptr, 0.0f, 0.0f, 0.0f);
 }
 
 
-void updateIntroCamera(GLFWwindow* window, float deltaTime) {
-
+void updateIntro(GLFWwindow* window, float deltaTime) {
 	float introDurationP1 = introAnimationP1.GetDuration() / 1000.0f; // Convert ms to seconds
 	float introDurationP2 = introAnimationP2.GetDuration() / 1000.0f; // Convert ms to seconds
 	static float transitionDuration = 1.0f; // Duration of the camera transition
 	static float transitionTimer = 0.0f; // Timer for the camera transition
-	
-	static float introTimer = 0.0f;
 
-	if (currentState == GAME_INTRO) {
-
+	if (currentState == INTRO_P1) {
 		introTimer += deltaTime;
-
-		// Transition to INTRO_P1 state
-		if (introTimer >= 10.0f || glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
-			currentState = INTRO_P1;
-			introTimer = 0.0f;
-			transitionTimer = 0.0f;
-			player1_animator.PlayAnimation(&introAnimationP1, nullptr, 0.0f, 0.0f, 0.0f);
-			player2_animator.PlayAnimation(&idleAnimationP2, nullptr, 0.0f, 0.0f, 0.0f);
-
-		}
-
-	}
-	else if (currentState == INTRO_P1) {
-
-		introTimer += deltaTime;
-	
-		camera.Yaw = introP1camYaw;
-		camera.Pitch = introP1camPitch;
-		camera.Position = introCamPos;
-		camera.updateCameraVectors();
-
-		player1Position = player1IntroPosition;
-		player2Position = player2IntroPosition;
-
-		if (transitionTimer < transitionDuration) {
-			// Perform the interpolation
-			float t = transitionTimer / transitionDuration;
-			camera.Yaw = lerp(gameCamYaw, introP1camYaw, t);
-			camera.Pitch = lerp(gameCamPitch, introP1camPitch, t);
-			camera.Position = lerpVec3(gameCamPos, introCamPos, t);
-			camera.updateCameraVectors();
-			transitionTimer += deltaTime;
-		}
-		else {
-			// Ensure the final values are set after interpolation
-			camera.Yaw = introP1camYaw;
-			camera.Pitch = introP1camPitch;
-			camera.Position = introCamPos;
-			camera.updateCameraVectors();
-		}
-
-
-		if (introTimer >= introDurationP1 || glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
+		if (introTimer >= introDurationP2 || glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
 			currentState = INTRO_P2;
 			introTimer = 0.0f;
 			transitionTimer = 0.0f; // Reset transition timer
 			player1_animator.PlayAnimation(&idleAnimationP1, nullptr, 0.0f, 0.0f, 0.0f);
 			player2_animator.PlayAnimation(&introAnimationP2, nullptr, 0.0f, 0.0f, 0.0f);
 		}
-
 	}
 	else if (currentState == INTRO_P2) {
-
 		if (transitionTimer < transitionDuration) {
 			// Perform the interpolation
 			float t = transitionTimer / transitionDuration;
@@ -301,7 +239,6 @@ void updateIntroCamera(GLFWwindow* window, float deltaTime) {
 		}
 
 		introTimer += deltaTime;
-
 		if (introTimer >= introDurationP2 || glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) { // End intro slightly earlier to blend to countdown
 			// Reset positions and camera after intro
 			player2Position = player2gamePosition; // Reset to game position
@@ -316,67 +253,6 @@ void updateIntroCamera(GLFWwindow* window, float deltaTime) {
 			introTimer = 0.0f;
 		}
 	}
-
-}
-
-void updateText(Shader& textShader, float deltaTime) {
-
-	static float elapsedTime = 0.0f; // Track elapsed time for animations
-	elapsedTime += deltaTime;
-
-	glm::vec3 whiteColor = glm::vec3(1.0f, 1.0f, 1.0f);
-
-	if (currentState == GAME_INTRO) {
-
-		// Game Intro - Slam effect
-		static float gameNameScale = 15.0f; // Start extremely large
-		static float slamTimer = 0.0f;
-		const float minScale = 1.0f;        // Normal size after the slam
-		const float slamDuration = 15.0f;   // Duration of the slam effect
-		const float slamSpeed = 2.0f;     // Speed of the scaling down
-
-		// Slam animation
-		if (elapsedTime < slamDuration) {
-			gameNameScale = glm::max(minScale, gameNameScale - deltaTime * slamSpeed);
-		}
-	
-		RenderText(textShader, "GAME NAME", SCR_WIDTH / 2 - 150, SCR_HEIGHT / 2, gameNameScale, whiteColor);
-
-	}
-	else if (currentState == INTRO_P1) {
-
-		elapsedTime = 0.0f;
-
-		//Slice in from the left
-		static float player1X = -500.0f; // Off-screen start
-		const float targetX = 50.0f;     // Final position
-		const float speed = 300.0f;      // Sliding speed
-
-		player1X = glm::min(player1X + speed * deltaTime, targetX); // Slide in
-
-		RenderText(textShader, "PLAYER 1", player1X, SCR_HEIGHT - 150, 1.0f, whiteColor);
-
-	}
-	else if (currentState == INTRO_P2) {
-
-		elapsedTime = 0.0f;
-
-		// Slice in from the right
-		static float player2X = SCR_WIDTH + 500.0f; // Off-screen start
-		const float targetX = SCR_WIDTH - 200.0f;   // Final position
-		const float speed = 300.0f;                 // Sliding speed
-
-		player2X = glm::max(player2X - speed * deltaTime, targetX);
-
-		RenderText(textShader, "PLAYER 2", player2X, SCR_HEIGHT - 150, 1.0f, whiteColor);
-
-	}
-	else if (currentState == COUNTDOWN) {
-
-		RenderText(textShader, "countdown", SCR_WIDTH / 2 - 150, SCR_HEIGHT / 2, 1.5f, glm::vec3(1.0f, 1.0f, 1.0f));
-
-	}
-
 
 }
 
@@ -513,23 +389,23 @@ void handleCollisions(GLFWwindow* window, float deltaTime) {
 				damage = kickAnimationP1.getDamageForTime(animationTime);
 			}
 
-			// Check if Player 2 is currently blocking
-			if (P2charState == P2_IDLE_BLOCK) {
-				std::cout << "Player 2 blocked the attack!" << std::endl;
-			}
-			else {
-				// Apply damage to Player 2 if not blocking
-				
-				//player2Health -= damage;
-				player2HealthBar.health -= damage;
-
-				std::cout << "Player 2 hit! Health now: " << player1HealthBar.health << std::endl;
-				if (player2HealthBar.health <= 0) {
-					std::cout << "Player 2 has been defeated!" << std::endl;
+			if (damage > 0) { // Damage is applied only if the current frame is a damage keyframe
+				// Check if Player 2 is currently blocking
+				if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
+					std::cout << "Player 2 blocked the attack!" << std::endl;
+					//player2_animator.PlayAnimation(&idleAnimationP2, &blockAnimationP2, animator.m_CurrentTime, 0.0f, blendAmount);
+					P2charState = P2_IDLE_BLOCK;
+					
 				}
-
-				player2HealthBar.shakeTimer = shakeDuration;
-
+				else {
+					// Apply damage to Player 2 if not blocking
+					player2Health -= damage;
+					std::cout << "Player 2 hit! Health now: " << player2Health << std::endl;
+					P2charState = P2_IDLE_HIT; // Update the state to reflect being hit
+					if (player2Health <= 0) {
+						std::cout << "Player 2 has been defeated!" << std::endl;
+					}
+				}
 			}
 		}
 
@@ -554,17 +430,13 @@ void handleCollisions(GLFWwindow* window, float deltaTime) {
 				}
 				else {
 					// Apply damage to Player 1 if not blocking
-					//player1Health -= damage;
-					player1HealthBar.health -= damage;
-					std::cout << "Player 1 hit! Health now: " << player1HealthBar.health << std::endl;
+					player1Health -= damage;
+					std::cout << "Player 1 hit! Health now: " << player1Health << std::endl;
 					P1charState = P1_IDLE_HIT; // Update the state to reflect being hit
-					if (player1HealthBar.health <= 0) {
+					if (player1Health <= 0) {
 						std::cout << "Player 1 has been defeated!" << std::endl;
 					}
 				}
-
-				player1HealthBar.shakeTimer = shakeDuration;
-
 			}
 		}
 	}
@@ -572,45 +444,27 @@ void handleCollisions(GLFWwindow* window, float deltaTime) {
 
 void RenderHealthBars(Shader& shader, unsigned int texture) {
 
+	// Maximum width of the health bar
 	const float maxBarWidth = 400.0f;
 
-	// Calculate the dynamic width based on the health ratio for both players
-	float player1HealthRatio = static_cast<float>(player1HealthBar.health) / MAX_HEALTH;
-	float player2HealthRatio = static_cast<float>(player2HealthBar.health) / MAX_HEALTH;
+	// Calculate the dynamic width based on the health ratio
+	float player1HealthRatio = (float)player1Health / MAX_HEALTH; 
+	float player2HealthRatio = (float)player2Health / MAX_HEALTH;
 
 	float player1BarWidth = maxBarWidth * player1HealthRatio;
 	float player2BarWidth = maxBarWidth * player2HealthRatio;
 
-	// Calculate shaking offset for Player 1's health bar
-	float player1ShakeOffsetY = 0.0f;
-	if (player1HealthBar.shakeTimer > 0.0f) {
-		player1ShakeOffsetY = shakeIntensity * sin(20.0f * glfwGetTime());
-		player1HealthBar.shakeTimer -= deltaTime; // Reduce shake timer
-		if (player1HealthBar.shakeTimer < 0.0f) player1HealthBar.shakeTimer = 0.0f; // Clamp to 0
-	}
+	// Adjust the position for Player 1's health bar
+	float player1BarX = 50.0f; // Left side stays fixed
 
-	// Adjust the position for Player 1's health bar (fixed left)
-	float player1BarX = 50.0f;
-	float player1BarY = SCR_HEIGHT - 100.0f + player1ShakeOffsetY;
+	// Adjust the position for Player 2's health bar
+	float player2BarX = SCR_WIDTH - (player1BarX + maxBarWidth) + (maxBarWidth - player2BarWidth); // Right side stays fixed
 
 	// Render Player 1's health bar
-	RenderUIElement(shader, texture, player1BarX, player1BarY, player1BarWidth, 40.0f);
-
-	// Calculate shaking offset for Player 2's health bar
-	float player2ShakeOffsetY = 0.0f;
-	if (player2HealthBar.shakeTimer > 0.0f) {
-		player2ShakeOffsetY = shakeIntensity * sin(20.0f * glfwGetTime()); // Oscillating shake effect
-		player2HealthBar.shakeTimer -= deltaTime; // Reduce shake timer
-		if (player2HealthBar.shakeTimer < 0.0f) player2HealthBar.shakeTimer = 0.0f; // Clamp to 0
-	}
-
-	// Adjust the position for Player 2's health bar (fixed right)
-	float player2BarX = SCR_WIDTH - (player1BarX + maxBarWidth) + (maxBarWidth - player2BarWidth);
-	float player2BarY = SCR_HEIGHT - 100.0f + player2ShakeOffsetY;
+	RenderUIElement(shader, texture, player1BarX, SCR_HEIGHT - 100.0f, player1BarWidth, 40.0f);
 
 	// Render Player 2's health bar
-	RenderUIElement(shader, texture, player2BarX, player2BarY, player2BarWidth, 40.0f);
-
+	RenderUIElement(shader, texture, player2BarX, SCR_HEIGHT - 100.0f, player2BarWidth, 40.0f);
 
 }
 
@@ -657,12 +511,7 @@ int main()
 	}
 	glfwMakeContextCurrent(window);
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-
-	if (currentState >= GAMEPLAY) {
-		glfwSetCursorPosCallback(window, mouse_callback);
-	}
-		
-
+	glfwSetCursorPosCallback(window, mouse_callback);
 	glfwSetScrollCallback(window, scroll_callback);
 
 	// tell GLFW to capture our mouse
@@ -733,7 +582,6 @@ int main()
 	blockAnimationP2.loadAnimation("Object/Wrestler/Left Block.dae", &player2, 1.0f);
 	hitAnimationP2.loadAnimation("Object/Wrestler/Head Hit.dae", &player2, 1.5f);
 
-	Model Scene("Object/Scene/Snowtown.obj");
 
 	pbrShader.use();
 	pbrShader.setInt("irradianceMap", 0);
@@ -748,9 +596,7 @@ int main()
 	backgroundShader.use();
 	backgroundShader.setInt("environmentMap", 0);
 
-	//initTextRendering("Textures/Fonts/Roboto-Bold.ttf");
-
-	initTextRendering("Textures/Fonts/Cybergame-Regular Italic.ttf");
+	initTextRendering("Textures/Fonts/Roboto-Bold.ttf");
 	glm::mat4 projection = glm::ortho(0.0f, static_cast<float>(SCR_WIDTH), 0.0f, static_cast<float>(SCR_HEIGHT));
 	textShader.use();
 	glUniformMatrix4fv(glGetUniformLocation(textShader.ID, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
@@ -975,24 +821,12 @@ int main()
 		pbrShader.setVec3("lightColors[" + std::to_string(i) + "]", lightColors[i]);
 	}
 
-	
-	
-	//INITIAL STATES FOR GAME INTRO
-	//---------------------------------------------------------------
+	setupIntro();
 
-	player1_animator.PlayAnimation(&idleAnimationP1, nullptr, 0.0f, 0.0f, 0.0f);
-	player2_animator.PlayAnimation(&idleAnimationP2, nullptr, 0.0f, 0.0f, 0.0f);
+	camera.Yaw = introP1camYaw;
+	camera.Pitch = introP1camPitch;
 
-	player2Position = player2gamePosition;
-	player1Position = player1gamePosition;
-	camera.Yaw = gameCamYaw;
-	camera.Pitch = gameCamPitch;
-	camera.Position = gameCamPos;
 	camera.updateCameraVectors();
-
-	//---------------------------------------------------------------
-
-
 	// draw in wireframe
 	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	
@@ -1014,7 +848,7 @@ int main()
 
 		// input
 		// -----
-		processInput(window);
+		//processInput(window);
 		if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
 			glfwSetWindowShouldClose(window, true);
 
@@ -1046,29 +880,6 @@ int main()
 		glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		switch (currentState) {
-		case GAME_INTRO:
-		case INTRO_P1:
-		case INTRO_P2:
-			updateIntroCamera(window, deltaTime);
-			updateText(textShader, deltaTime);
-			break;
-		case COUNTDOWN:
-			startCountdown(deltaTime);
-			break;
-		case GAMEPLAY:
-			// Gameplay logic
-			updateCapsules();
-			handleCollisions();
-			UpdateStateP1(window, player1_animator, P1charState, blendAmountP1);
-			UpdateStateP2(window, player2_animator, P2charState, blendAmountP2);
-			timer.update();
-			break;
-		}
-
-		player1_animator.UpdateAnimation(deltaTime);
-		player2_animator.UpdateAnimation(deltaTime);
-
 		pbrShader.use();
 
 		// view/projection transformations
@@ -1086,10 +897,10 @@ int main()
 		glBindTexture(GL_TEXTURE_2D, brdfLUTTexture);
 
 		//--------------PBR--------------------
-		/*glm::mat4 model = glm::mat4(1.0f);
-		pbrShader.setMat4("model", glm::transpose(glm::inverse(glm::mat3(model))));
-		pbrShader.setMat3("normalMatrix", glm::transpose(glm::inverse(glm::mat3(model))));
-		Scene.Draw(pbrShader);*/
+		//glm::mat4 model = glm::mat4(1.0f);
+		//pbrShader.setMat4("model", glm::transpose(glm::inverse(glm::mat3(model))));
+		//pbrShader.setMat3("normalMatrix", glm::transpose(glm::inverse(glm::mat3(model))));
+		//Car.Draw(pbrShader);
 
 		// don't forget to enable shader before setting uniforms
 		ourShader.use();
@@ -1141,8 +952,8 @@ int main()
 			RenderText(textShader, timerText, (SCR_WIDTH / 2.0f) - 20.0f , static_cast<float>(SCR_HEIGHT) - 100.0f, 1.0f, glm::vec3(1.0f, 1.0f, 1.0f));
 
 		}
-
 		
+
 		
 
 
@@ -1201,8 +1012,6 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 // -------------------------------------------------------
 void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 {
-
-
 	if (firstMouse)
 	{
 		lastX = xpos;
@@ -1216,10 +1025,7 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 	lastX = xpos;
 	lastY = ypos;
 
-	if (currentState >= GAMEPLAY) {
-		camera.ProcessMouseMovement(xoffset, yoffset);
-	}
-
+	camera.ProcessMouseMovement(xoffset, yoffset);
 }
 
 // glfw: whenever the mouse scroll wheel scrolls, this callback is called
