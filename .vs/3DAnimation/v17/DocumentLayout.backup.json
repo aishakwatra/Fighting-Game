@@ -60,7 +60,7 @@
               "RelativeDocumentMoniker": "3DAnimation\\3DAnimation.cpp",
               "ToolTip": "C:\\Capt\\Fighting-Game\\3DAnimation\\3DAnimation.cpp",
               "RelativeToolTip": "3DAnimation\\3DAnimation.cpp",
-              "ViewState": "AgIAAGMGAAAAAAAAAAAAAHcGAAAxAAAAAAAAAA==",
+              "ViewState": "AgIAAK4EAAAAAAAAAAAswMYEAAAcAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
               "WhenOpened": "2024-12-12T06:01:19.043Z",
               "IsPinned": true,
@@ -77,8 +77,7 @@
               "ViewState": "AgIAACQAAAAAAAAAAAAAADcAAAAYAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
               "WhenOpened": "2024-12-12T06:01:19.244Z",
-              "IsPinned": true,
-              "EditorCaption": ""
+              "IsPinned": true
             },
             {
               "$type": "Document",
@@ -90,8 +89,7 @@
               "RelativeToolTip": "3DAnimation\\animator.h",
               "ViewState": "AgIAAHQAAAAAAAAAAAAAAIwAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
-              "WhenOpened": "2024-12-20T08:14:46.699Z",
-              "EditorCaption": ""
+              "WhenOpened": "2024-12-20T08:14:46.699Z"
             },
             {
               "$type": "Document",
@@ -103,8 +101,7 @@
               "RelativeToolTip": "includes\\assimp\\Importer.hpp",
               "ViewState": "AgIAAIUCAAAAAAAAAAAmwJ4CAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
-              "WhenOpened": "2024-12-12T06:01:19.236Z",
-              "EditorCaption": ""
+              "WhenOpened": "2024-12-12T06:01:19.236Z"
             },
             {
               "$type": "Document",
@@ -152,8 +149,7 @@
               "RelativeToolTip": "3DAnimation\\anim_model.vs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAABgAAAAFAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
-              "WhenOpened": "2024-12-12T06:01:19.249Z",
-              "EditorCaption": ""
+              "WhenOpened": "2024-12-12T06:01:19.249Z"
             },
             {
               "$type": "Document",
@@ -177,8 +173,7 @@
               "RelativeToolTip": "3DAnimation\\assimp_glm_helpers.h",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAoAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
-              "WhenOpened": "2024-12-12T06:01:19.253Z",
-              "EditorCaption": ""
+              "WhenOpened": "2024-12-12T06:01:19.253Z"
             }
           ]
         }
