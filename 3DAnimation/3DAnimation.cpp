@@ -1022,25 +1022,6 @@ int main()
 			glfwSetWindowShouldClose(window, true);
 
 
-
-		switch (currentState) {
-			case INTRO_P1:
-			case INTRO_P2:
-				updateIntro(window, deltaTime);
-				break;
-			case COUNTDOWN:
-				startCountdown(deltaTime);
-				break;
-			case GAMEPLAY:
-				// Gameplay logic
-				updateCapsules();
-				handleCollisions(window,deltaTime);
-				UpdateStateP1(window, player1_animator, P1charState, blendAmountP1);
-				UpdateStateP2(window, player2_animator, P2charState, blendAmountP2);
-				timer.update();
-				break;
-		}
-
 		player1_animator.UpdateAnimation(deltaTime);
 		player2_animator.UpdateAnimation(deltaTime);
 
@@ -1062,15 +1043,12 @@ int main()
 		case GAMEPLAY:
 			// Gameplay logic
 			updateCapsules();
-			handleCollisions();
+			handleCollisions(window,deltaTime);
 			UpdateStateP1(window, player1_animator, P1charState, blendAmountP1);
 			UpdateStateP2(window, player2_animator, P2charState, blendAmountP2);
 			timer.update();
 			break;
 		}
-
-		player1_animator.UpdateAnimation(deltaTime);
-		player2_animator.UpdateAnimation(deltaTime);
 
 		pbrShader.use();
 
