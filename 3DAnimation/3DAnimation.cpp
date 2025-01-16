@@ -188,6 +188,7 @@ glm::vec3 player2IntroPosition = glm::vec3(0.0f, -0.4f, 5.0f);
 glm::vec3 player1gamePosition = glm::vec3(0.0f, -0.4f, 0.0f);
 glm::vec3 player2gamePosition = glm::vec3(0.0f, -0.4f, 3.0f);
 float moveSpeed = 0.9f;
+float knockback = 0.5f;
 int P1punchDamage = 1;
 int P1kickDamage = 4;
 int P2punchDamage = 4;
@@ -343,7 +344,7 @@ void updateText(Shader& textShader, float deltaTime) {
 		static float slamTimer = 0.0f;
 		const float minScale = 1.0f;        // Normal size after the slam
 		const float slamDuration = 15.0f;   // Duration of the slam effect
-		const float slamSpeed = 2.0f;     // Speed of the scaling down
+		const float slamSpeed = 4.0f;     // Speed of the scaling down
 
 		// Slam animation
 		if (elapsedTime < slamDuration) {
@@ -358,13 +359,13 @@ void updateText(Shader& textShader, float deltaTime) {
 		elapsedTime = 0.0f;
 
 		//Slice in from the left
-		static float player1X = -500.0f; // Off-screen start
-		const float targetX = 50.0f;     // Final position
+		static float player1X = -1000.0f; // Off-screen start
+		const float targetX = 70.0f;     // Final position
 		const float speed = 300.0f;      // Sliding speed
 
 		player1X = glm::min(player1X + speed * deltaTime, targetX); // Slide in
 
-		RenderText(textShader, "PLAYER 1", player1X, SCR_HEIGHT - 150, 1.0f, whiteColor);
+		RenderText(textShader, "BIG VEGAS", player1X, SCR_HEIGHT - 150, 1.0f, whiteColor);
 
 	}
 	else if (currentState == INTRO_P2) {
@@ -372,13 +373,13 @@ void updateText(Shader& textShader, float deltaTime) {
 		elapsedTime = 0.0f;
 
 		// Slice in from the right
-		static float player2X = SCR_WIDTH + 500.0f; // Off-screen start
-		const float targetX = SCR_WIDTH - 200.0f;   // Final position
+		static float player2X = SCR_WIDTH + 1000.0f; // Off-screen start
+		const float targetX = SCR_WIDTH - 300.0f;   // Final position
 		const float speed = 300.0f;                 // Sliding speed
 
 		player2X = glm::max(player2X - speed * deltaTime, targetX);
 
-		RenderText(textShader, "PLAYER 2", player2X, SCR_HEIGHT - 150, 1.0f, whiteColor);
+		RenderText(textShader, "EL CHUPACABRA", player2X, SCR_HEIGHT - 150, 1.0f, whiteColor);
 
 	}
 	else if (currentState == COUNTDOWN) {
@@ -413,9 +414,6 @@ void startCountdown(float deltaTime) {
 		camera.Position = gameCamPos;  // Example camera position
 	}
 }
-
-
-
 
 void updateCapsules() {
 	// Adjust these values based on the character's current pose and animation
@@ -532,8 +530,8 @@ void handleCollisions(GLFWwindow* window, float deltaTime) {
 					std::cout << "Player 2 blocked the attack!" << std::endl;
 					//player2_animator.PlayAnimation(&idleAnimationP2, &blockAnimationP2, animator.m_CurrentTime, 0.0f, blendAmount);
 					P2charState = P2_IDLE_BLOCK;
-					//player1Position.z += moveSpeed * deltaTime;
-					player2Position.z += moveSpeed * deltaTime;
+					player1Position.z += knockback * deltaTime;
+					player2Position.z += knockback * deltaTime;
 					//player1_animator.pauseAtCurrentTime();
 					//player1_animator.pauseAtCurrentTime();
 					
@@ -546,8 +544,9 @@ void handleCollisions(GLFWwindow* window, float deltaTime) {
 					if (player2HealthBar.health <= 0) {
 						std::cout << "Player 2 has been defeated!" << std::endl;
 					}
-					//player1Position.z += moveSpeed * deltaTime;
-					player2Position.z += moveSpeed * deltaTime;
+					player1Position.z += knockback * deltaTime;
+					player2Position.z += knockback * deltaTime;
+
 					//player1_animator.pauseAtCurrentTime();
 					//player1_animator.pauseAtCurrentTime();
 				}
@@ -575,6 +574,8 @@ void handleCollisions(GLFWwindow* window, float deltaTime) {
 					std::cout << "Player 1 blocked the attack!" << std::endl;
 					//player2_animator.PlayAnimation(&idleAnimationP2, &blockAnimationP2, animator.m_CurrentTime, 0.0f, blendAmount);
 					P1charState = P1_IDLE_BLOCK;
+					player1Position.z -= knockback * deltaTime;
+					player2Position.z -= knockback * deltaTime;
 
 				}
 				else {
@@ -586,6 +587,8 @@ void handleCollisions(GLFWwindow* window, float deltaTime) {
 					if (player1HealthBar.health <= 0) {
 						std::cout << "Player 1 has been defeated!" << std::endl;
 					}
+					player1Position.z -= knockback * deltaTime;
+					player2Position.z -= knockback * deltaTime;
 				}
 
 				player1HealthBar.shakeTimer = shakeDuration;
