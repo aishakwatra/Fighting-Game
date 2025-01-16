@@ -19,6 +19,8 @@
 
 #define MAX_HEALTH 150.0f
 
+#define ROUND_DURATION 10.0f
+
 enum AnimStateP1 {
 	P1_IDLE = 1,
 	P1_IDLE_PUNCH,
@@ -60,9 +62,12 @@ enum GameState {
 	GAME_INTRO,
 	INTRO_P1,
 	INTRO_P2,
-	COUNTDOWN,
+	START_ROUND,
 	GAMEPLAY,
 	END_ROUND,
+	P1_WINS,
+	P2_WINS,
+	PLAYERS_TIE,
 	RESTART
 };
 
@@ -70,7 +75,8 @@ GameState currentState = GAME_INTRO;
 
 bool gameStart = false;
 float introTimer = 0.0f;
-float countdown = 3.0f;  // 3 seconds countdown
+
+int currentRound = 1;
 
 
 struct Capsule {
@@ -82,7 +88,8 @@ struct Capsule {
 Capsule player1Capsule;
 Capsule player2Capsule;
 
-CountdownTimer timer;
+CountdownTimer timer(ROUND_DURATION, 2.0f);
+CountdownTimer countdownTimer(8.0f); 
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
@@ -145,7 +152,7 @@ float introP1camYaw = -89.199913f;
 float introP1camPitch = -7.599974;
 float introP2camYaw = 92.700043f;
 float introP2camPitch = -4.899976f;
-float gameCamYaw = -1.000028f;
+float gameCamYaw = -1.000028f; 
 float gameCamPitch = 8.200005f;
 
 float lastX = SCR_WIDTH / 2.0f;
@@ -200,15 +207,31 @@ const float shakeDuration = 0.5f;
 const float shakeIntensity = 3.0f;
 
 
-struct HealthBar {
-	float health;         // Current health
-	float shakeTimer;     // Timer for shake effect
-	glm::vec2 position;   // Position of the health bar
-	glm::vec2 size;       // Size of the health bar
+struct PlayerStats {
+
+	float playerHealth;        
+	float shakeTimer;    
+
+	glm::vec2 healthBarPosition;  
+	glm::vec2 healthBarSize;  
+
+	int playerScore;
+
 };
 
-HealthBar player1HealthBar = { MAX_HEALTH, 0.0f, glm::vec2(50.0f, SCR_HEIGHT - 100.0f), glm::vec2(400.0f, 40.0f) };
-HealthBar player2HealthBar = { MAX_HEALTH, 0.0f, glm::vec2(SCR_WIDTH - 450.0f, SCR_HEIGHT - 100.0f), glm::vec2(400.0f, 40.0f) };
+PlayerStats player1Stats = { 
+	MAX_HEALTH, 
+	0.0f, 
+	glm::vec2(50.0f, SCR_HEIGHT - 100.0f), 
+	glm::vec2(400.0f, 40.0f), 
+	0 };
+
+PlayerStats player2Stats = { 
+	MAX_HEALTH, 
+	0.0f, 
+	glm::vec2(SCR_WIDTH - 450.0f, SCR_HEIGHT - 100.0f), 
+	glm::vec2(400.0f, 40.0f), 
+	0 };
 
 
 float lerp(float start, float end, float t) {
@@ -312,9 +335,43 @@ void updateIntroCamera(GLFWwindow* window, float deltaTime) {
 			camera.updateCameraVectors();
 			player1_animator.PlayAnimation(&idleAnimationP1, nullptr, 0.0f, 0.0f, 0.0f);
 			player2_animator.PlayAnimation(&idleAnimationP2, nullptr, 0.0f, 0.0f, 0.0f);
-			currentState = COUNTDOWN;
+			currentState = START_ROUND;
+			countdownTimer.start();
 			introTimer = 0.0f;
+
 		}
+	}
+
+}
+
+void updateEndCamera(GLFWwindow* window, float deltaTime) {
+
+	static float elapsedTime = 0.0f;
+
+	elapsedTime += deltaTime;
+
+	if (currentState == P1_WINS) {
+
+
+		//camera lerp to player 1
+		//winning dance
+
+
+	}
+	else if (currentState == P2_WINS) {
+
+		//camera lerp to player 2
+		//winning dance
+
+	} else if (currentState == PLAYERS_TIE) {
+
+		//normal camera view
+		//
+		
+	}
+
+	if (elapsedTime >= 5.0f) {
+		currentState = START_ROUND;
 	}
 
 }
@@ -371,24 +428,55 @@ void updateText(Shader& textShader, float deltaTime) {
 		RenderText(textShader, "PLAYER 2", player2X, SCR_HEIGHT - 150, 1.0f, whiteColor);
 
 	}
-	else if (currentState == COUNTDOWN) {
 
-		RenderText(textShader, "countdown", SCR_WIDTH / 2 - 150, SCR_HEIGHT / 2, 1.5f, glm::vec3(1.0f, 1.0f, 1.0f));
+	else if (currentState == START_ROUND) {
+
+		if (countdownTimer.getRemainingTime() > 3.999f) {
+			
+			//std::string roundtext = "ROUND " + currentRound;
+			std::string roundtext = "ROUND 1";
+			RenderText(textShader, roundtext, SCR_WIDTH / 2 - 50, SCR_HEIGHT / 2, 2.0f, whiteColor);
+
+		}
+		else if (countdownTimer.isTimeUp()){
+			std::string countdownText = countdownTimer.getFormattedTime();
+			RenderText(textShader, countdownText, SCR_WIDTH / 2 - 50, SCR_HEIGHT / 2, 1.5f, whiteColor);
+		}
 
 	}
 
+	else if (currentState == GAMEPLAY) {
+
+		std::string timerText = timer.getFormattedTime();
+		RenderText(textShader, timerText, (SCR_WIDTH / 2.0f) - 20.0f, static_cast<float>(SCR_HEIGHT) - 100.0f, 1.0f, whiteColor);
+
+	}
+
+	else if (currentState == P1_WINS) {
+		RenderText(textShader, "PLAYER 1 WINS", SCR_WIDTH / 2 - 50, SCR_HEIGHT / 2, 2.0f, whiteColor);
+	}
+
+	else if (currentState == P2_WINS) {
+		RenderText(textShader, "PLAYER 2 WINS", SCR_WIDTH / 2 - 50, SCR_HEIGHT / 2, 2.0f, whiteColor);
+	}
+
+	else if (currentState == PLAYERS_TIE) {
+		RenderText(textShader, "TIE", SCR_WIDTH / 2 - 50, SCR_HEIGHT / 2, 2.0f, whiteColor);
+	}
 
 }
 
 
-void startCountdown(float deltaTime) {
-	countdown -= deltaTime;
-	if (countdown <= 0.0f) {
+void startCountdown() {
+
+	countdownTimer.update();
+
+	if (countdownTimer.getRemainingTime() <= 0.0f) {
 		gameStart = true;
 		currentState = GAMEPLAY;
+		currentRound += 1;
 
-		
-		timer.resetToDefault();
+		timer.resetToDefault(ROUND_DURATION);
 		timer.start();
 
 		// Ensure both players are set to idle at the start of gameplay
@@ -400,12 +488,35 @@ void startCountdown(float deltaTime) {
 		player2_animator.PlayAnimation(&idleAnimationP2, nullptr, 0.0f, 0.0f, 0.0f);
 
 		// Reset camera position if necessary
-		camera.Position = gameCamPos;  // Example camera position
+		camera.Position = gameCamPos; // Example camera position
+		camera.updateCameraVectors();
+
 	}
+
 }
 
+void updateGameplay() {
 
+	timer.update();
 
+	if (player1Stats.playerHealth <= 0.0f) {
+		std::cout << "Player 2 wins this round!" << std::endl;
+		currentState = P2_WINS;
+		player2Stats.playerScore += 1;
+
+	}
+	else if (player2Stats.playerHealth <= 0.0f) {
+		std::cout << "Player 1 wins this round!" << std::endl;
+		currentState = P1_WINS;
+		player1Stats.playerScore += 1;
+
+	}
+
+	if (timer.isTimeUp()) {
+		currentState = PLAYERS_TIE;
+	}
+	
+}
 
 void updateCapsules() {
 	// Adjust these values based on the character's current pose and animation
@@ -523,15 +634,15 @@ void handleCollisions(GLFWwindow* window, float deltaTime) {
 				}
 				else {
 					// Apply damage to Player 2 if not blocking
-					player2HealthBar.health -= damage;
-					std::cout << "Player 2 hit! Health now: " <<  player1HealthBar.health << std::endl;
+					player2Stats.playerHealth -= damage;
+					std::cout << "Player 2 hit! Health now: " <<  player1Stats.playerHealth << std::endl;
 					P2charState = P2_IDLE_HIT; // Update the state to reflect being hit
-					if (player2HealthBar.health <= 0) {
+					if (player2Stats.playerHealth <= 0) {
 						std::cout << "Player 2 has been defeated!" << std::endl;
 					}
 				}
 
-				player2HealthBar.shakeTimer = shakeDuration;
+				player2Stats.shakeTimer = shakeDuration;
 
 			}
 		}
@@ -558,15 +669,15 @@ void handleCollisions(GLFWwindow* window, float deltaTime) {
 				else {
 					// Apply damage to Player 1 if not blocking
 					//player1Health -= damage;
-					player1HealthBar.health -= damage;
-					std::cout << "Player 1 hit! Health now: " << player1HealthBar.health << std::endl;
+					player1Stats.playerHealth -= damage;
+					std::cout << "Player 1 hit! Health now: " << player1Stats.playerHealth << std::endl;
 					P1charState = P1_IDLE_HIT; // Update the state to reflect being hit
-					if (player1HealthBar.health <= 0) {
+					if (player1Stats.playerHealth <= 0) {
 						std::cout << "Player 1 has been defeated!" << std::endl;
 					}
 				}
 
-				player1HealthBar.shakeTimer = shakeDuration;
+				player1Stats.shakeTimer = shakeDuration;
 
 			}
 		}
@@ -578,18 +689,18 @@ void RenderHealthBars(Shader& shader, unsigned int texture) {
 	const float maxBarWidth = 400.0f;
 
 	// Calculate the dynamic width based on the health ratio for both players
-	float player1HealthRatio = static_cast<float>(player1HealthBar.health) / MAX_HEALTH;
-	float player2HealthRatio = static_cast<float>(player2HealthBar.health) / MAX_HEALTH;
+	float player1HealthRatio = static_cast<float>(player1Stats.playerHealth) / MAX_HEALTH;
+	float player2HealthRatio = static_cast<float>(player2Stats.playerHealth) / MAX_HEALTH;
 
 	float player1BarWidth = maxBarWidth * player1HealthRatio;
 	float player2BarWidth = maxBarWidth * player2HealthRatio;
 
 	// Calculate shaking offset for Player 1's health bar
 	float player1ShakeOffsetY = 0.0f;
-	if (player1HealthBar.shakeTimer > 0.0f) {
+	if (player1Stats.shakeTimer > 0.0f) {
 		player1ShakeOffsetY = shakeIntensity * sin(20.0f * glfwGetTime());
-		player1HealthBar.shakeTimer -= deltaTime; // Reduce shake timer
-		if (player1HealthBar.shakeTimer < 0.0f) player1HealthBar.shakeTimer = 0.0f; // Clamp to 0
+		player1Stats.shakeTimer -= deltaTime; // Reduce shake timer
+		if (player1Stats.shakeTimer < 0.0f) player1Stats.shakeTimer = 0.0f; // Clamp to 0
 	}
 
 	// Adjust the position for Player 1's health bar (fixed left)
@@ -601,10 +712,10 @@ void RenderHealthBars(Shader& shader, unsigned int texture) {
 
 	// Calculate shaking offset for Player 2's health bar
 	float player2ShakeOffsetY = 0.0f;
-	if (player2HealthBar.shakeTimer > 0.0f) {
+	if (player2Stats.shakeTimer > 0.0f) {
 		player2ShakeOffsetY = shakeIntensity * sin(20.0f * glfwGetTime()); // Oscillating shake effect
-		player2HealthBar.shakeTimer -= deltaTime; // Reduce shake timer
-		if (player2HealthBar.shakeTimer < 0.0f) player2HealthBar.shakeTimer = 0.0f; // Clamp to 0
+		player2Stats.shakeTimer -= deltaTime; // Reduce shake timer
+		if (player2Stats.shakeTimer < 0.0f) player2Stats.shakeTimer = 0.0f; // Clamp to 0
 	}
 
 	// Adjust the position for Player 2's health bar (fixed right)
@@ -614,19 +725,7 @@ void RenderHealthBars(Shader& shader, unsigned int texture) {
 	// Render Player 2's health bar
 	RenderUIElement(shader, texture, player2BarX, player2BarY, player2BarWidth, 40.0f);
 
-
 }
-
-void UpdateTimer() {
-
-	if (currentState == GAMEPLAY) {
-		timer.start();
-
-
-	}
-
-}
-
 
 int main()
 {
@@ -1035,10 +1134,9 @@ int main()
 		case INTRO_P1:
 		case INTRO_P2:
 			updateIntroCamera(window, deltaTime);
-			updateText(textShader, deltaTime);
 			break;
-		case COUNTDOWN:
-			startCountdown(deltaTime);
+		case START_ROUND:
+			startCountdown();
 			break;
 		case GAMEPLAY:
 			// Gameplay logic
@@ -1046,9 +1144,18 @@ int main()
 			handleCollisions(window,deltaTime);
 			UpdateStateP1(window, player1_animator, P1charState, blendAmountP1);
 			UpdateStateP2(window, player2_animator, P2charState, blendAmountP2);
-			timer.update();
+			updateGameplay();
+			
+			break;
+
+		case P1_WINS:
+		case P2_WINS:
+		case PLAYERS_TIE:
+			updateEndCamera(window, deltaTime);
 			break;
 		}
+
+		updateText(textShader, deltaTime);
 
 		pbrShader.use();
 
@@ -1118,8 +1225,8 @@ int main()
 			UIShader.use();
 			RenderHealthBars(UIShader, healthBarTexture);
 
-			std::string timerText = timer.getFormattedTime();
-			RenderText(textShader, timerText, (SCR_WIDTH / 2.0f) - 20.0f , static_cast<float>(SCR_HEIGHT) - 100.0f, 1.0f, glm::vec3(1.0f, 1.0f, 1.0f));
+			/*std::string timerText = timer.getFormattedTime();
+			RenderText(textShader, timerText, (SCR_WIDTH / 2.0f) - 20.0f , static_cast<float>(SCR_HEIGHT) - 100.0f, 1.0f, glm::vec3(1.0f, 1.0f, 1.0f));*/
 
 		}
 

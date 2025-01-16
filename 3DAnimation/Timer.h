@@ -7,13 +7,26 @@
 
 class CountdownTimer {
 public:
-    CountdownTimer()
-        : running(false), startTime(0.0f), remainingTime(60.0f), defaultTime(60.0f) {}
+    CountdownTimer(float initialTime = 60.0f, float delay = 0.0f)
+        : running(false), startTime(0.0f), remainingTime(initialTime),
+        defaultTime(initialTime), delay(delay), delayElapsed(0.0f) {}
 
-    void start() {
+
+    /*void start() {
         if (!running) {
             running = true;
             startTime = static_cast<float>(glfwGetTime());
+        }
+    }*/
+
+    void start(float newDelay = -1.0f) {
+        if (!running) {
+            if (newDelay >= 0.0f) {
+                delay = newDelay;
+            }
+            running = true;
+            startTime = static_cast<float>(glfwGetTime());
+            delayElapsed = 0.0f; // Reset delay tracker
         }
     }
 
@@ -21,7 +34,9 @@ public:
         if (running) {
             running = false;
             float elapsed = static_cast<float>(glfwGetTime()) - startTime;
-            remainingTime -= elapsed; // Update remaining time based on elapsed time
+            if (elapsed > delay) {
+                remainingTime -= (elapsed - delay);
+            }
             if (remainingTime < 0.0f) {
                 remainingTime = 0.0f;
             }
@@ -31,18 +46,41 @@ public:
     void restart() {
         running = false;
         remainingTime = defaultTime;
+        delayElapsed = 0.0f;
     }
 
     void resetToDefault(float newTime = 60.0f) {
         running = false;
         defaultTime = newTime;
         remainingTime = defaultTime;
+        delayElapsed = 0.0f;
     }
 
-    void update() {
+    /*void update() {
         if (running) {
             float elapsed = static_cast<float>(glfwGetTime()) - startTime;
             remainingTime = defaultTime - elapsed;
+            if (remainingTime <= 0.0f) {
+                remainingTime = 0.0f;
+                running = false;
+            }
+        }
+    }*/
+
+    void update() {
+        if (running) {
+            float currentTime = static_cast<float>(glfwGetTime());
+            float elapsed = currentTime - startTime;
+
+            // Handle delay
+            if (delayElapsed < delay) {
+                delayElapsed = elapsed;
+                if (delayElapsed < delay) {
+                    return; // Delay not yet finished
+                }
+            }
+
+            remainingTime = defaultTime - (elapsed - delay);
             if (remainingTime <= 0.0f) {
                 remainingTime = 0.0f;
                 running = false;
@@ -67,11 +105,18 @@ public:
         return remainingTime <= 0.0f;
     }
 
+    float getRemainingTime() {
+        return remainingTime;
+    }
+
 private:
     bool running;
     float startTime;      // When the timer started
     float remainingTime;  // Remaining time in seconds
     float defaultTime;    // Default countdown duration
+
+    float delay;           // Delay before the countdown starts
+    float delayElapsed;    // Time elapsed during the delay
 };
 
 #endif
