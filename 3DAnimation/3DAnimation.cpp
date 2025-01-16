@@ -16,8 +16,12 @@
 #include "model.h"
 #include <iostream>
 #include "Timer.h"
+#include <chrono>
+#include <thread>
 
 #define MAX_HEALTH 150.0f
+#define HIT_PAUSE_DURATION 0.1f // adjust the duration as necessary
+
 
 enum AnimStateP1 {
 	P1_IDLE = 1,
@@ -183,7 +187,7 @@ glm::vec3 player1IntroPosition = glm::vec3(0.0f, -0.4f, -2.0f);
 glm::vec3 player2IntroPosition = glm::vec3(0.0f, -0.4f, 5.0f);
 glm::vec3 player1gamePosition = glm::vec3(0.0f, -0.4f, 0.0f);
 glm::vec3 player2gamePosition = glm::vec3(0.0f, -0.4f, 3.0f);
-float moveSpeed = 0.7f;
+float moveSpeed = 0.9f;
 int P1punchDamage = 1;
 int P1kickDamage = 4;
 int P2punchDamage = 4;
@@ -219,6 +223,12 @@ glm::vec3 lerpVec3(const glm::vec3& start, const glm::vec3& end, float t) {
 	return start + t * (end - start);
 }
 
+void setPauseTimer(float duration) {
+	// Convert duration from seconds to milliseconds
+	int milliseconds = static_cast<int>(duration * 1000);
+	// Pause the execution of the current thread (simulating a pause in game)
+	std::this_thread::sleep_for(std::chrono::milliseconds(milliseconds));
+}
 
 void updateIntroCamera(GLFWwindow* window, float deltaTime) {
 
@@ -492,6 +502,8 @@ bool checkCapsuleCollision(const Capsule& capsule1, const Capsule& capsule2) {
 	return distance < (capsule1.radius + capsule2.radius);
 }
 
+
+
 void handleCollisions(GLFWwindow* window, float deltaTime) {
 	if (checkCapsuleCollision(player1Capsule, player2Capsule)) {
 		glm::vec3 collisionNormal = glm::normalize(player2Position - player1Position);
@@ -505,6 +517,7 @@ void handleCollisions(GLFWwindow* window, float deltaTime) {
 		// Handling for Player 1 attacking
 		if (P1charState == P1_PUNCH_IDLE || P1charState == P1_KICK_IDLE) {
 			float animationTime = player1_animator.getCurrentAnimationTime(); // Get the current animation time
+			
 			int damage = 0;
 			if (P1charState == P1_PUNCH_IDLE) {
 				damage = punchAnimationP1.getDamageForTime(animationTime); // Check for damage at the current animation time
@@ -519,6 +532,10 @@ void handleCollisions(GLFWwindow* window, float deltaTime) {
 					std::cout << "Player 2 blocked the attack!" << std::endl;
 					//player2_animator.PlayAnimation(&idleAnimationP2, &blockAnimationP2, animator.m_CurrentTime, 0.0f, blendAmount);
 					P2charState = P2_IDLE_BLOCK;
+					//player1Position.z += moveSpeed * deltaTime;
+					player2Position.z += moveSpeed * deltaTime;
+					//player1_animator.pauseAtCurrentTime();
+					//player1_animator.pauseAtCurrentTime();
 					
 				}
 				else {
@@ -529,9 +546,14 @@ void handleCollisions(GLFWwindow* window, float deltaTime) {
 					if (player2HealthBar.health <= 0) {
 						std::cout << "Player 2 has been defeated!" << std::endl;
 					}
+					//player1Position.z += moveSpeed * deltaTime;
+					player2Position.z += moveSpeed * deltaTime;
+					//player1_animator.pauseAtCurrentTime();
+					//player1_animator.pauseAtCurrentTime();
 				}
 
 				player2HealthBar.shakeTimer = shakeDuration;
+				//setPauseTimer(HIT_PAUSE_DURATION);
 
 			}
 		}
@@ -572,6 +594,7 @@ void handleCollisions(GLFWwindow* window, float deltaTime) {
 		}
 	}
 }
+
 
 void RenderHealthBars(Shader& shader, unsigned int texture) {
 
@@ -690,7 +713,7 @@ int main()
 	// enable seamless cubemap sampling for lower mip levels in the pre-filter map.
 	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 
-	// build and compile shaders
+	// build and compile shader
 	// -------------------------
 	Shader ourShader("anim_model.vs", "anim_model.fs");
 
@@ -712,8 +735,8 @@ int main()
 	player1.loadModel("Object/Vegas/Big Vegas.dae");
 	introAnimationP1.loadAnimation("Object/Vegas/Step Hip Hop Dance.dae",&player1);
 	idleAnimationP1.loadAnimation("Object/Vegas/Idle.dae",&player1);
-	walkFrontAnimationP1.loadAnimation("Object/Vegas/WalkForward.dae", &player1,3.0f);
-	walkBackAnimationP1.loadAnimation("Object/Vegas/WalkBack.dae", &player1,3.0f);
+	walkFrontAnimationP1.loadAnimation("Object/Vegas/Walking.dae", &player1,1.0f);
+	walkBackAnimationP1.loadAnimation("Object/Vegas/Walking Backwards.dae", &player1,1.0f);
 	punchAnimationP1.loadAnimation("Object/Vegas/Punch Combo.dae", &player1,1.5f);
 	punchAnimationP1.AddDamageKeyframe(0.5f, P1punchDamage);
 	punchAnimationP1.AddDamageKeyframe(1.0f, P1punchDamage);
@@ -727,7 +750,7 @@ int main()
 	player2.loadModel("Object/Wrestler/Ch43_nonPBR.dae");
 	introAnimationP2.loadAnimation("Object/Wrestler/Catwalk Walk.dae", &player2);
 	idleAnimationP2.loadAnimation("Object/Wrestler/Fighting Idle.dae", &player2);
-	walkFrontAnimationP2.loadAnimation("Object/Wrestler/Walking.dae", &player2, 3.0f);
+	walkFrontAnimationP2.loadAnimation("Object/Wrestler/Walking.dae", &player2);
 	walkBackAnimationP2.loadAnimation("Object/Wrestler/Walking Backwards.dae", &player2, 1.0f);
 	punchAnimationP2.loadAnimation("Object/Wrestler/Cross Punch.dae", &player2, 1.0f);
 	punchAnimationP2.AddDamageKeyframe(0.25f,P2punchDamage);
@@ -1017,7 +1040,7 @@ int main()
 
 		// input
 		// -----
-		processInput(window);
+		//processInput(window);
 		if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
 			glfwSetWindowShouldClose(window, true);
 
