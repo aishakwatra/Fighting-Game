@@ -188,7 +188,7 @@ glm::vec3 player2IntroPosition = glm::vec3(0.0f, -0.4f, 5.0f);
 glm::vec3 player1gamePosition = glm::vec3(0.0f, -0.4f, 0.0f);
 glm::vec3 player2gamePosition = glm::vec3(0.0f, -0.4f, 3.0f);
 float moveSpeed = 0.9f;
-float knockback = 0.5f;
+float knockback = 1.0f;
 int P1punchDamage = 1;
 int P1kickDamage = 4;
 int P2punchDamage = 4;
@@ -565,7 +565,7 @@ void handleCollisions(GLFWwindow* window, float deltaTime) {
 				damage = punchAnimationP2.getDamageForTime(animationTime); // Check for damage at the current animation time
 			}
 			else if (P2charState == P2_KICK_IDLE) {
-				damage = kickAnimationP2.getDamageForTime(animationTime);
+				damage = kickAnimationP2.getDamageForTime(animationTime);	
 			}
 
 			if (damage > 0) { // Damage is applied only if the current frame is a damage keyframe
