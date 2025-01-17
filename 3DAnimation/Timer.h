@@ -12,13 +12,6 @@ public:
         defaultTime(initialTime), delay(delay), delayElapsed(0.0f) {}
 
 
-    /*void start() {
-        if (!running) {
-            running = true;
-            startTime = static_cast<float>(glfwGetTime());
-        }
-    }*/
-
     void start(float newDelay = -1.0f) {
         if (!running) {
             if (newDelay >= 0.0f) {
@@ -56,16 +49,6 @@ public:
         delayElapsed = 0.0f;
     }
 
-    /*void update() {
-        if (running) {
-            float elapsed = static_cast<float>(glfwGetTime()) - startTime;
-            remainingTime = defaultTime - elapsed;
-            if (remainingTime <= 0.0f) {
-                remainingTime = 0.0f;
-                running = false;
-            }
-        }
-    }*/
 
     void update() {
         if (running) {
@@ -89,12 +72,13 @@ public:
     }
 
     std::string getFormattedTime() const {
+
         int totalSeconds = static_cast<int>(remainingTime);
         int seconds = totalSeconds % 60;
 
-        char buffer[8];
-        snprintf(buffer, sizeof(buffer), "%02d", seconds);
-        return std::string(buffer);
+        // Convert seconds to a string dynamically (handles one or two digits)
+        return std::to_string(seconds);
+
     }
 
     bool isRunning() const {

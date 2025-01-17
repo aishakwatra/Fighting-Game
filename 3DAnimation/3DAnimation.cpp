@@ -19,7 +19,7 @@
 
 #define MAX_HEALTH 150.0f
 
-#define ROUND_DURATION 10.0f
+#define ROUND_DURATION 60.0f
 
 enum AnimStateP1 {
 	P1_IDLE = 1,
@@ -62,6 +62,7 @@ enum GameState {
 	GAME_INTRO,
 	INTRO_P1,
 	INTRO_P2,
+	TRANSITION_TO_GAMEPLAY,
 	START_ROUND,
 	GAMEPLAY,
 	END_ROUND,
@@ -76,7 +77,7 @@ GameState currentState = GAME_INTRO;
 bool gameStart = false;
 float introTimer = 0.0f;
 
-int currentRound = 1;
+int currentRound = 0;
 
 
 struct Capsule {
@@ -89,7 +90,7 @@ Capsule player1Capsule;
 Capsule player2Capsule;
 
 CountdownTimer timer(ROUND_DURATION, 2.0f);
-CountdownTimer countdownTimer(8.0f); 
+CountdownTimer countdownTimer(7.0f); 
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
@@ -243,12 +244,27 @@ glm::vec3 lerpVec3(const glm::vec3& start, const glm::vec3& end, float t) {
 }
 
 
+//call at the beginning of every round
+void restartRound() {
+
+	currentState = START_ROUND;
+	countdownTimer.resetToDefault(7.0f);
+	countdownTimer.start();
+	currentRound++;
+
+}
+
+
 void updateIntroCamera(GLFWwindow* window, float deltaTime) {
 
 	float introDurationP1 = introAnimationP1.GetDuration() / 1000.0f; // Convert ms to seconds
 	float introDurationP2 = introAnimationP2.GetDuration() / 1000.0f; // Convert ms to seconds
 	static float transitionDuration = 1.0f; // Duration of the camera transition
 	static float transitionTimer = 0.0f; // Timer for the camera transition
+
+	static float gameToPlayerDuration = 3.0f;
+
+	static float transitionGameplayDuration = 1.5f;
 	
 	static float introTimer = 0.0f;
 
@@ -279,9 +295,9 @@ void updateIntroCamera(GLFWwindow* window, float deltaTime) {
 		player1Position = player1IntroPosition;
 		player2Position = player2IntroPosition;
 
-		if (transitionTimer < transitionDuration) {
+		if (transitionTimer < gameToPlayerDuration) {
 			// Perform the interpolation
-			float t = transitionTimer / transitionDuration;
+			float t = transitionTimer / gameToPlayerDuration;
 			camera.Yaw = lerp(gameCamYaw, introP1camYaw, t);
 			camera.Pitch = lerp(gameCamPitch, introP1camPitch, t);
 			camera.Position = lerpVec3(gameCamPos, introCamPos, t);
@@ -308,6 +324,8 @@ void updateIntroCamera(GLFWwindow* window, float deltaTime) {
 	}
 	else if (currentState == INTRO_P2) {
 
+		introTimer += deltaTime;
+
 		if (transitionTimer < transitionDuration) {
 			// Perform the interpolation
 			float t = transitionTimer / transitionDuration;
@@ -323,26 +341,54 @@ void updateIntroCamera(GLFWwindow* window, float deltaTime) {
 			camera.updateCameraVectors();
 		}
 
-		introTimer += deltaTime;
+		if (introTimer >= introDurationP2 || glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
+			currentState = TRANSITION_TO_GAMEPLAY;
+			introTimer = 0.0f;
+			transitionTimer = 0.0f; // Reset transition timer
 
-		if (introTimer >= introDurationP2 || glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) { // End intro slightly earlier to blend to countdown
-			// Reset positions and camera after intro
 			player2Position = player2gamePosition; // Reset to game position
 			player1Position = player1gamePosition;
+			player1_animator.PlayAnimation(&idleAnimationP1, nullptr, 0.0f, 0.0f, 0.0f);
+			player2_animator.PlayAnimation(&idleAnimationP2, nullptr, 0.0f, 0.0f, 0.0f);
+
+		}
+
+	}
+
+	else if (currentState == TRANSITION_TO_GAMEPLAY) {
+
+		introTimer += deltaTime;
+
+		if (transitionTimer < transitionGameplayDuration) {
+			// Perform the interpolation from INTRO_P2 to START ROUND
+			float t = transitionTimer / transitionGameplayDuration;
+			camera.Yaw = lerp(introP2camYaw, gameCamYaw, t);
+			camera.Pitch = lerp(introP2camPitch, gameCamPitch, t);
+			camera.Position = lerpVec3(introCamPos, gameCamPos, t);
+			camera.updateCameraVectors();
+			transitionTimer += deltaTime;
+		}
+		else {
+			
 			camera.Yaw = gameCamYaw;
 			camera.Pitch = gameCamPitch;
 			camera.Position = gameCamPos;
 			camera.updateCameraVectors();
-			player1_animator.PlayAnimation(&idleAnimationP1, nullptr, 0.0f, 0.0f, 0.0f);
-			player2_animator.PlayAnimation(&idleAnimationP2, nullptr, 0.0f, 0.0f, 0.0f);
-			currentState = START_ROUND;
-			countdownTimer.start();
+
+		}
+
+		if (introTimer >= transitionGameplayDuration || glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
 			introTimer = 0.0f;
+			transitionTimer = 0.0f; // Reset transition timer
+			restartRound(); // Start the round
 
 		}
 	}
 
 }
+
+
+
 
 void updateEndCamera(GLFWwindow* window, float deltaTime) {
 
@@ -366,12 +412,12 @@ void updateEndCamera(GLFWwindow* window, float deltaTime) {
 	} else if (currentState == PLAYERS_TIE) {
 
 		//normal camera view
-		//
+		
 		
 	}
 
 	if (elapsedTime >= 5.0f) {
-		currentState = START_ROUND;
+		restartRound();
 	}
 
 }
@@ -433,12 +479,12 @@ void updateText(Shader& textShader, float deltaTime) {
 
 		if (countdownTimer.getRemainingTime() > 3.999f) {
 			
-			//std::string roundtext = "ROUND " + currentRound;
-			std::string roundtext = "ROUND 1";
-			RenderText(textShader, roundtext, SCR_WIDTH / 2 - 50, SCR_HEIGHT / 2, 2.0f, whiteColor);
+			std::string roundText = "ROUND " + std::to_string(currentRound);
+			RenderText(textShader, roundText, SCR_WIDTH / 2 - 50, SCR_HEIGHT / 2, 2.0f, whiteColor);
 
 		}
-		else if (countdownTimer.isTimeUp()){
+		
+		if (countdownTimer.getRemainingTime() < 3.999f){
 			std::string countdownText = countdownTimer.getFormattedTime();
 			RenderText(textShader, countdownText, SCR_WIDTH / 2 - 50, SCR_HEIGHT / 2, 1.5f, whiteColor);
 		}
@@ -474,7 +520,6 @@ void startCountdown() {
 	if (countdownTimer.getRemainingTime() <= 0.0f) {
 		gameStart = true;
 		currentState = GAMEPLAY;
-		currentRound += 1;
 
 		timer.resetToDefault(ROUND_DURATION);
 		timer.start();
@@ -855,6 +900,7 @@ int main()
 	initTextRendering("Textures/Fonts/Cybergame-Regular Italic.ttf");
 	glm::mat4 projection = glm::ortho(0.0f, static_cast<float>(SCR_WIDTH), 0.0f, static_cast<float>(SCR_HEIGHT));
 	textShader.use();
+
 	glUniformMatrix4fv(glGetUniformLocation(textShader.ID, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
 
 	initUIRendering();
@@ -1133,6 +1179,7 @@ int main()
 		case GAME_INTRO:
 		case INTRO_P1:
 		case INTRO_P2:
+		case TRANSITION_TO_GAMEPLAY:
 			updateIntroCamera(window, deltaTime);
 			break;
 		case START_ROUND:
@@ -1224,9 +1271,6 @@ int main()
 
 			UIShader.use();
 			RenderHealthBars(UIShader, healthBarTexture);
-
-			/*std::string timerText = timer.getFormattedTime();
-			RenderText(textShader, timerText, (SCR_WIDTH / 2.0f) - 20.0f , static_cast<float>(SCR_HEIGHT) - 100.0f, 1.0f, glm::vec3(1.0f, 1.0f, 1.0f));*/
 
 		}
 
