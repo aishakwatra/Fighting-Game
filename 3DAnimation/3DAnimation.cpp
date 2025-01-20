@@ -515,13 +515,14 @@ void handleCollisions(GLFWwindow* window, float deltaTime) {
 		// Handling for Player 1 attacking
 		if (P1charState == P1_PUNCH_IDLE || P1charState == P1_KICK_IDLE) {
 			float animationTime = player1_animator.getCurrentAnimationTime(); // Get the current animation time
-			
+			bool isP1Kicked = false;
 			int damage = 0;
 			if (P1charState == P1_PUNCH_IDLE) {
 				damage = punchAnimationP1.getDamageForTime(animationTime); // Check for damage at the current animation time
 			}
 			else if (P1charState == P1_KICK_IDLE) {
 				damage = kickAnimationP1.getDamageForTime(animationTime);
+				isP1Kicked = true;
 			}
 
 			if (damage > 0) { // Damage is applied only if the current frame is a damage keyframe
@@ -530,7 +531,7 @@ void handleCollisions(GLFWwindow* window, float deltaTime) {
 					std::cout << "Player 2 blocked the attack!" << std::endl;
 					//player2_animator.PlayAnimation(&idleAnimationP2, &blockAnimationP2, animator.m_CurrentTime, 0.0f, blendAmount);
 					P2charState = P2_IDLE_BLOCK;
-					player1Position.z += knockback * deltaTime;
+					//player1Position.z += knockback * deltaTime;
 					player2Position.z += knockback * deltaTime;
 					//player1_animator.pauseAtCurrentTime();
 					//player1_animator.pauseAtCurrentTime();
@@ -544,7 +545,12 @@ void handleCollisions(GLFWwindow* window, float deltaTime) {
 					if (player2HealthBar.health <= 0) {
 						std::cout << "Player 2 has been defeated!" << std::endl;
 					}
-					player1Position.z += knockback * deltaTime;
+					//player1Position.z += knockback * deltaTime;
+					if (isP1Kicked) {
+						// Apply additional knockback and trigger fall animation for kicks
+						player2Position.z += knockback * 5 * deltaTime; // Double knockback for kicks
+						
+					}
 					player2Position.z += knockback * deltaTime;
 
 					//player1_animator.pauseAtCurrentTime();
@@ -748,7 +754,7 @@ int main()
 	kickAnimationP1.loadAnimation("Object/Vegas/Kicking.dae", &player1,1.5f);
 	kickAnimationP1.AddDamageKeyframe(0.7f, P1kickDamage);
 	blockAnimationP1.loadAnimation("Object/Vegas/Center Block.dae", &player1,1.2f);
-	hitAnimationP1.loadAnimation("Object/Vegas/Head Hit.dae", &player1, 1.5f);
+	hitAnimationP1.loadAnimation("Object/Vegas/Head Hit Punch.dae", &player1, 1.5f);
 
 	player2.loadModel("Object/Wrestler/Ch43_nonPBR.dae");
 	introAnimationP2.loadAnimation("Object/Wrestler/Catwalk Walk.dae", &player2);
