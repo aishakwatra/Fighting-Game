@@ -17,7 +17,7 @@ uniform samplerCube prefilterMap;
 uniform sampler2D brdfLUT;
 
 // lights
-uniform vec3 lightPositions[4];
+uniform vec3 lightPositions[6];
 uniform vec3 lightColors[4];
 
 uniform vec3 camPos;

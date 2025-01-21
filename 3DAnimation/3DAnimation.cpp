@@ -16,6 +16,7 @@
 #include "model.h"
 #include <iostream>
 #include "Timer.h"
+#include "Skybox.h"
 
 #define MAX_HEALTH 150.0f
 
@@ -112,10 +113,10 @@ void RenderUIElement(Shader& shader, unsigned int texture, float x, float y, flo
 
 
 glm::vec3 lightPositions[4] = {
-glm::vec3(10.0f, 5.0f, 10.0f),
-glm::vec3(-10.0f, 5.0f, 10.0f),
-glm::vec3(10.0f, 5.0f, -10.0f),
-glm::vec3(-10.0f, 5.0f, -10.0f)
+	glm::vec3(0.0f, 3.0f, 2.0f),  
+	glm::vec3(-3.0f, 3.0f, 3.0f),  
+	glm::vec3(3.0f, 3.0f, -3.0f),  
+	glm::vec3(0.0f, 3.0f, -2.0f)  
 };
 
 glm::vec3 lightColors[4] = {
@@ -845,6 +846,18 @@ int main()
 	Shader textShader("Shaders/text.vs", "Shaders/text.fs");
 	Shader UIShader("Shaders/UIShader.vs", "Shaders/UIShader.fs");
 
+	Shader skyboxShader("Shaders/skybox/skybox.vs", "Shaders/skybox/skybox.fs");
+	std::vector<std::string> faces = {
+	"Textures/skybox/sunset/px.jpg",
+	"Textures/skybox/sunset/nx.jpg",
+	"Textures/skybox/sunset/py.jpg",
+	"Textures/skybox/sunset/ny.jpg",
+	"Textures/skybox/sunset/pz.jpg",
+	"Textures/skybox/sunset/nz.jpg"
+	};
+
+	Skybox skybox(faces, skyboxShader.getID());
+
 	// load models
 	// -----------
 	// idle 3.3, walk 2.06, run 0.83, punch 1.03, kick 1.6
@@ -1122,6 +1135,7 @@ int main()
 		pbrShader.setVec3("lightColors[" + std::to_string(i) + "]", lightColors[i]);
 	}
 
+
 	
 	
 	//INITIAL STATES FOR GAME INTRO
@@ -1196,9 +1210,9 @@ int main()
 		pbrShader.use();
 
 		glm::mat4 modelScene = glm::mat4(1.0f);
-		modelScene = glm::translate(modelScene, glm::vec3(2.0f, -1.0f, 0.0f));
-		modelScene = glm::rotate(modelScene, glm::radians(45.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-		modelScene = glm::scale(modelScene, glm::vec3(0.5f, 0.5f, 0.5f));
+		modelScene = glm::translate(modelScene, glm::vec3(5.0f, -0.5f, 1.0f));
+		modelScene = glm::rotate(modelScene, glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+		modelScene = glm::scale(modelScene, glm::vec3(0.8f, 0.8f, 0.8f));
 
 		pbrShader.setMat4("model", modelScene);
 		pbrShader.setMat3("normalMatrix", glm::transpose(glm::inverse(glm::mat3(modelScene))));
@@ -1243,6 +1257,8 @@ int main()
 			ourShader.setMat4("finalBonesMatrices[" + std::to_string(i) + "]", transformsP2[i]);
 		}
 		player2.Draw(ourShader);
+
+		skybox.draw(view, projection);
 
 		switch (currentState) {
 		case GAME_INTRO:
