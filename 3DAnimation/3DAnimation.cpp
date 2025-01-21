@@ -804,12 +804,9 @@ int main()
 	}
 	glfwMakeContextCurrent(window);
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-
-	if (currentState >= GAMEPLAY) {
-		glfwSetCursorPosCallback(window, mouse_callback);
-	}
-		
-
+	
+	glfwSetCursorPosCallback(window, mouse_callback);
+	
 	glfwSetScrollCallback(window, scroll_callback);
 
 	// tell GLFW to capture our mouse
@@ -846,7 +843,6 @@ int main()
 	Shader backgroundShader("Shaders/PBR/background.vs", "Shaders/PBR/background.fs");
 
 	Shader textShader("Shaders/text.vs", "Shaders/text.fs");
-	
 	Shader UIShader("Shaders/UIShader.vs", "Shaders/UIShader.fs");
 
 	// load models
@@ -880,7 +876,10 @@ int main()
 	blockAnimationP2.loadAnimation("Object/Wrestler/Left Block.dae", &player2, 1.0f);
 	hitAnimationP2.loadAnimation("Object/Wrestler/Head Hit.dae", &player2, 1.5f);
 
-	Model Scene("Object/Scene/Snowtown.obj");
+
+	stbi_set_flip_vertically_on_load(false);
+
+	Model Scene("Object/Scene/Low Poly Winter Scene.obj");
 
 	pbrShader.use();
 	pbrShader.setInt("irradianceMap", 0);
@@ -923,7 +922,7 @@ int main()
 	// ---------------------------------
 	stbi_set_flip_vertically_on_load(true);
 	int width, height, nrComponents;
-	float* data = stbi_loadf("Textures/HDR/newport_loft.hdr", &width, &height, &nrComponents, 0);
+	float* data = stbi_loadf("Textures/HDR/sky.hdr", &width, &height, &nrComponents, 0);
 	unsigned int hdrTexture;
 	if (data)
 	{
@@ -1175,34 +1174,6 @@ int main()
 		glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		switch (currentState) {
-		case GAME_INTRO:
-		case INTRO_P1:
-		case INTRO_P2:
-		case TRANSITION_TO_GAMEPLAY:
-			updateIntroCamera(window, deltaTime);
-			break;
-		case START_ROUND:
-			startCountdown();
-			break;
-		case GAMEPLAY:
-			// Gameplay logic
-			updateCapsules();
-			handleCollisions(window,deltaTime);
-			UpdateStateP1(window, player1_animator, P1charState, blendAmountP1);
-			UpdateStateP2(window, player2_animator, P2charState, blendAmountP2);
-			updateGameplay();
-			
-			break;
-
-		case P1_WINS:
-		case P2_WINS:
-		case PLAYERS_TIE:
-			updateEndCamera(window, deltaTime);
-			break;
-		}
-
-		updateText(textShader, deltaTime);
 
 		pbrShader.use();
 
@@ -1221,10 +1192,17 @@ int main()
 		glBindTexture(GL_TEXTURE_2D, brdfLUTTexture);
 
 		//--------------PBR--------------------
-		/*glm::mat4 model = glm::mat4(1.0f);
-		pbrShader.setMat4("model", glm::transpose(glm::inverse(glm::mat3(model))));
-		pbrShader.setMat3("normalMatrix", glm::transpose(glm::inverse(glm::mat3(model))));
-		Scene.Draw(pbrShader);*/
+
+		pbrShader.use();
+
+		glm::mat4 modelScene = glm::mat4(1.0f);
+		modelScene = glm::translate(modelScene, glm::vec3(2.0f, -1.0f, 0.0f));
+		modelScene = glm::rotate(modelScene, glm::radians(45.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+		modelScene = glm::scale(modelScene, glm::vec3(0.5f, 0.5f, 0.5f));
+
+		pbrShader.setMat4("model", modelScene);
+		pbrShader.setMat3("normalMatrix", glm::transpose(glm::inverse(glm::mat3(modelScene))));
+		Scene.Draw(pbrShader);
 
 		// don't forget to enable shader before setting uniforms
 		ourShader.use();
@@ -1266,7 +1244,34 @@ int main()
 		}
 		player2.Draw(ourShader);
 
-		
+		switch (currentState) {
+		case GAME_INTRO:
+		case INTRO_P1:
+		case INTRO_P2:
+		case TRANSITION_TO_GAMEPLAY:
+			updateIntroCamera(window, deltaTime);
+			break;
+		case START_ROUND:
+			startCountdown();
+			break;
+		case GAMEPLAY:
+			// Gameplay logic
+			updateCapsules();
+			handleCollisions(window, deltaTime);
+			UpdateStateP1(window, player1_animator, P1charState, blendAmountP1);
+			UpdateStateP2(window, player2_animator, P2charState, blendAmountP2);
+			updateGameplay();
+
+			break;
+
+		case P1_WINS:
+		case P2_WINS:
+		case PLAYERS_TIE:
+			updateEndCamera(window, deltaTime);
+			break;
+		}
+
+
 		if (gameStart) {
 
 			UIShader.use();
@@ -1274,8 +1279,7 @@ int main()
 
 		}
 
-		
-		
+		updateText(textShader, deltaTime);
 
 
 		// glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
