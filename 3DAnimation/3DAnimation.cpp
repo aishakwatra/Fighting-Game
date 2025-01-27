@@ -18,10 +18,13 @@
 #include "Timer.h"
 #include <chrono>
 #include <thread>
+#include "Skybox.h"
 
 #define MAX_HEALTH 150.0f
 #define HIT_PAUSE_DURATION 0.1f // adjust the duration as necessary
 
+
+#define ROUND_DURATION 60.0f
 
 enum AnimStateP1 {
 	P1_IDLE = 1,
@@ -64,9 +67,13 @@ enum GameState {
 	GAME_INTRO,
 	INTRO_P1,
 	INTRO_P2,
-	COUNTDOWN,
+	TRANSITION_TO_GAMEPLAY,
+	START_ROUND,
 	GAMEPLAY,
 	END_ROUND,
+	P1_WINS,
+	P2_WINS,
+	PLAYERS_TIE,
 	RESTART
 };
 
@@ -74,7 +81,8 @@ GameState currentState = GAME_INTRO;
 
 bool gameStart = false;
 float introTimer = 0.0f;
-float countdown = 3.0f;  // 3 seconds countdown
+
+int currentRound = 0;
 
 
 struct Capsule {
@@ -86,7 +94,8 @@ struct Capsule {
 Capsule player1Capsule;
 Capsule player2Capsule;
 
-CountdownTimer timer;
+CountdownTimer timer(ROUND_DURATION, 2.0f);
+CountdownTimer countdownTimer(7.0f); 
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
@@ -108,10 +117,10 @@ void RenderUIElement(Shader& shader, unsigned int texture, float x, float y, flo
 
 
 glm::vec3 lightPositions[4] = {
-glm::vec3(10.0f, 5.0f, 10.0f),
-glm::vec3(-10.0f, 5.0f, 10.0f),
-glm::vec3(10.0f, 5.0f, -10.0f),
-glm::vec3(-10.0f, 5.0f, -10.0f)
+	glm::vec3(0.0f, 3.0f, 2.0f),  
+	glm::vec3(-3.0f, 3.0f, 3.0f),  
+	glm::vec3(3.0f, 3.0f, -3.0f),  
+	glm::vec3(0.0f, 3.0f, -2.0f)  
 };
 
 glm::vec3 lightColors[4] = {
@@ -149,7 +158,7 @@ float introP1camYaw = -89.199913f;
 float introP1camPitch = -7.599974;
 float introP2camYaw = 92.700043f;
 float introP2camPitch = -4.899976f;
-float gameCamYaw = -1.000028f;
+float gameCamYaw = -1.000028f; 
 float gameCamPitch = 8.200005f;
 
 float lastX = SCR_WIDTH / 2.0f;
@@ -205,15 +214,31 @@ const float shakeDuration = 0.5f;
 const float shakeIntensity = 3.0f;
 
 
-struct HealthBar {
-	float health;         // Current health
-	float shakeTimer;     // Timer for shake effect
-	glm::vec2 position;   // Position of the health bar
-	glm::vec2 size;       // Size of the health bar
+struct PlayerStats {
+
+	float playerHealth;        
+	float shakeTimer;    
+
+	glm::vec2 healthBarPosition;  
+	glm::vec2 healthBarSize;  
+
+	int playerScore;
+
 };
 
-HealthBar player1HealthBar = { MAX_HEALTH, 0.0f, glm::vec2(50.0f, SCR_HEIGHT - 100.0f), glm::vec2(400.0f, 40.0f) };
-HealthBar player2HealthBar = { MAX_HEALTH, 0.0f, glm::vec2(SCR_WIDTH - 450.0f, SCR_HEIGHT - 100.0f), glm::vec2(400.0f, 40.0f) };
+PlayerStats player1Stats = { 
+	MAX_HEALTH, 
+	0.0f, 
+	glm::vec2(50.0f, SCR_HEIGHT - 100.0f), 
+	glm::vec2(400.0f, 40.0f), 
+	0 };
+
+PlayerStats player2Stats = { 
+	MAX_HEALTH, 
+	0.0f, 
+	glm::vec2(SCR_WIDTH - 450.0f, SCR_HEIGHT - 100.0f), 
+	glm::vec2(400.0f, 40.0f), 
+	0 };
 
 
 float lerp(float start, float end, float t) {
@@ -231,12 +256,34 @@ void setPauseTimer(float duration) {
 	std::this_thread::sleep_for(std::chrono::milliseconds(milliseconds));
 }
 
+//call at the beginning of every round
+void restartRound() {
+
+	currentState = START_ROUND;
+	countdownTimer.resetToDefault(7.0f);d
+	countdownTimer.start();
+	currentRound++;
+	player1Stats.playerHealth = MAX_HEALTH;
+	player2Stats.playerHealth = MAX_HEALTH;
+
+	player2Position = player2gamePosition;
+	player1Position = player1gamePosition;
+	player1_animator.PlayAnimation(&idleAnimationP1, nullptr, 0.0f, 0.0f, 0.0f);
+	player2_animator.PlayAnimation(&idleAnimationP2, nullptr, 0.0f, 0.0f, 0.0f);
+
+}
+
+
 void updateIntroCamera(GLFWwindow* window, float deltaTime) {
 
 	float introDurationP1 = introAnimationP1.GetDuration() / 1000.0f; // Convert ms to seconds
 	float introDurationP2 = introAnimationP2.GetDuration() / 1000.0f; // Convert ms to seconds
 	static float transitionDuration = 1.0f; // Duration of the camera transition
 	static float transitionTimer = 0.0f; // Timer for the camera transition
+
+	static float gameToPlayerDuration = 3.0f;
+
+	static float transitionGameplayDuration = 1.5f;
 	
 	static float introTimer = 0.0f;
 
@@ -245,7 +292,7 @@ void updateIntroCamera(GLFWwindow* window, float deltaTime) {
 		introTimer += deltaTime;
 
 		// Transition to INTRO_P1 state
-		if (introTimer >= 10.0f || glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
+		if (introTimer >= 5.0f || glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
 			currentState = INTRO_P1;
 			introTimer = 0.0f;
 			transitionTimer = 0.0f;
@@ -267,9 +314,9 @@ void updateIntroCamera(GLFWwindow* window, float deltaTime) {
 		player1Position = player1IntroPosition;
 		player2Position = player2IntroPosition;
 
-		if (transitionTimer < transitionDuration) {
+		if (transitionTimer < gameToPlayerDuration) {
 			// Perform the interpolation
-			float t = transitionTimer / transitionDuration;
+			float t = transitionTimer / gameToPlayerDuration;
 			camera.Yaw = lerp(gameCamYaw, introP1camYaw, t);
 			camera.Pitch = lerp(gameCamPitch, introP1camPitch, t);
 			camera.Position = lerpVec3(gameCamPos, introCamPos, t);
@@ -296,6 +343,8 @@ void updateIntroCamera(GLFWwindow* window, float deltaTime) {
 	}
 	else if (currentState == INTRO_P2) {
 
+		introTimer += deltaTime;
+
 		if (transitionTimer < transitionDuration) {
 			// Perform the interpolation
 			float t = transitionTimer / transitionDuration;
@@ -311,21 +360,90 @@ void updateIntroCamera(GLFWwindow* window, float deltaTime) {
 			camera.updateCameraVectors();
 		}
 
-		introTimer += deltaTime;
+		if (introTimer >= introDurationP2 || glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
+			currentState = TRANSITION_TO_GAMEPLAY;
+			introTimer = 0.0f;
+			transitionTimer = 0.0f; // Reset transition timer
 
-		if (introTimer >= introDurationP2 || glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) { // End intro slightly earlier to blend to countdown
-			// Reset positions and camera after intro
 			player2Position = player2gamePosition; // Reset to game position
 			player1Position = player1gamePosition;
+			player1_animator.PlayAnimation(&idleAnimationP1, nullptr, 0.0f, 0.0f, 0.0f);
+			player2_animator.PlayAnimation(&idleAnimationP2, nullptr, 0.0f, 0.0f, 0.0f);
+
+		}
+
+	}
+
+	else if (currentState == TRANSITION_TO_GAMEPLAY) {
+
+		introTimer += deltaTime;
+
+		if (transitionTimer < transitionGameplayDuration) {
+			// Perform the interpolation from INTRO_P2 to START ROUND
+			float t = transitionTimer / transitionGameplayDuration;
+			camera.Yaw = lerp(introP2camYaw, gameCamYaw, t);
+			camera.Pitch = lerp(introP2camPitch, gameCamPitch, t);
+			camera.Position = lerpVec3(introCamPos, gameCamPos, t);
+			camera.updateCameraVectors();
+			transitionTimer += deltaTime;
+		}
+		else {
+			
 			camera.Yaw = gameCamYaw;
 			camera.Pitch = gameCamPitch;
 			camera.Position = gameCamPos;
 			camera.updateCameraVectors();
-			player1_animator.PlayAnimation(&idleAnimationP1, nullptr, 0.0f, 0.0f, 0.0f);
-			player2_animator.PlayAnimation(&idleAnimationP2, nullptr, 0.0f, 0.0f, 0.0f);
-			currentState = COUNTDOWN;
-			introTimer = 0.0f;
+
 		}
+
+		if (introTimer >= transitionGameplayDuration || glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
+			introTimer = 0.0f;
+			transitionTimer = 0.0f; // Reset transition timer
+			restartRound(); // Start the round
+
+		}
+	}
+
+
+
+
+
+
+
+
+
+
+}
+
+
+void updateEndCamera(GLFWwindow* window, float deltaTime) {
+
+	static float elapsedTime = 0.0f;
+
+	elapsedTime += deltaTime;
+
+	if (currentState == P1_WINS) {
+
+
+		//camera lerp to player 1
+		//winning dance
+
+
+	}
+	else if (currentState == P2_WINS) {
+
+		//camera lerp to player 2
+		//winning dance
+
+	} else if (currentState == PLAYERS_TIE) {
+
+		//normal camera view
+		
+		
+	}
+
+	if (elapsedTime >= 5.0f) {
+		restartRound();
 	}
 
 }
@@ -343,8 +461,8 @@ void updateText(Shader& textShader, float deltaTime) {
 		static float gameNameScale = 15.0f; // Start extremely large
 		static float slamTimer = 0.0f;
 		const float minScale = 1.0f;        // Normal size after the slam
-		const float slamDuration = 15.0f;   // Duration of the slam effect
-		const float slamSpeed = 4.0f;     // Speed of the scaling down
+		const float slamDuration = 7.0f;   // Duration of the slam effect
+		const float slamSpeed = 5.0f;     // Speed of the scaling down
 
 		// Slam animation
 		if (elapsedTime < slamDuration) {
@@ -382,24 +500,54 @@ void updateText(Shader& textShader, float deltaTime) {
 		RenderText(textShader, "EL CHUPACABRA", player2X, SCR_HEIGHT - 150, 1.0f, whiteColor);
 
 	}
-	else if (currentState == COUNTDOWN) {
 
-		RenderText(textShader, "countdown", SCR_WIDTH / 2 - 150, SCR_HEIGHT / 2, 1.5f, glm::vec3(1.0f, 1.0f, 1.0f));
+	else if (currentState == START_ROUND) {
+
+		if (countdownTimer.getRemainingTime() > 3.999f) {
+			
+			std::string roundText = "ROUND " + std::to_string(currentRound);
+			RenderText(textShader, roundText, SCR_WIDTH / 2 - 50, SCR_HEIGHT / 2, 2.0f, whiteColor);
+
+		}
+		
+		if (countdownTimer.getRemainingTime() < 3.999f){
+			std::string countdownText = countdownTimer.getFormattedTime();
+			RenderText(textShader, countdownText, SCR_WIDTH / 2 - 50, SCR_HEIGHT / 2, 1.5f, whiteColor);
+		}
 
 	}
 
+	else if (currentState == GAMEPLAY) {
+
+		std::string timerText = timer.getFormattedTime();
+		RenderText(textShader, timerText, (SCR_WIDTH / 2.0f) - 20.0f, static_cast<float>(SCR_HEIGHT) - 100.0f, 1.0f, whiteColor);
+
+	}
+
+	else if (currentState == P1_WINS) {
+		RenderText(textShader, "PLAYER 1 WINS", SCR_WIDTH / 2 - 50, SCR_HEIGHT / 2, 2.0f, whiteColor);
+	}
+
+	else if (currentState == P2_WINS) {
+		RenderText(textShader, "PLAYER 2 WINS", SCR_WIDTH / 2 - 50, SCR_HEIGHT / 2, 2.0f, whiteColor);
+	}
+
+	else if (currentState == PLAYERS_TIE) {
+		RenderText(textShader, "TIE", SCR_WIDTH / 2 - 50, SCR_HEIGHT / 2, 2.0f, whiteColor);
+	}
 
 }
 
 
-void startCountdown(float deltaTime) {
-	countdown -= deltaTime;
-	if (countdown <= 0.0f) {
+void startCountdown() {
+
+	countdownTimer.update();
+
+	if (countdownTimer.getRemainingTime() <= 0.0f) {
 		gameStart = true;
 		currentState = GAMEPLAY;
 
-		
-		timer.resetToDefault();
+		timer.resetToDefault(ROUND_DURATION);
 		timer.start();
 
 		// Ensure both players are set to idle at the start of gameplay
@@ -411,8 +559,34 @@ void startCountdown(float deltaTime) {
 		player2_animator.PlayAnimation(&idleAnimationP2, nullptr, 0.0f, 0.0f, 0.0f);
 
 		// Reset camera position if necessary
-		camera.Position = gameCamPos;  // Example camera position
+		camera.Position = gameCamPos; // Example camera position
+		camera.updateCameraVectors();
+
 	}
+
+}
+
+void updateGameplay() {
+
+	timer.update();
+
+	if (player1Stats.playerHealth <= 0.0f) {
+		std::cout << "Player 2 wins this round!" << std::endl;
+		currentState = P2_WINS;
+		player2Stats.playerScore += 1;
+
+	}
+	else if (player2Stats.playerHealth <= 0.0f) {
+		std::cout << "Player 1 wins this round!" << std::endl;
+		currentState = P1_WINS;
+		player1Stats.playerScore += 1;
+
+	}
+
+	if (timer.isTimeUp()) {
+		currentState = PLAYERS_TIE;
+	}
+	
 }
 
 void updateCapsules() {
@@ -539,10 +713,10 @@ void handleCollisions(GLFWwindow* window, float deltaTime) {
 				}
 				else {
 					// Apply damage to Player 2 if not blocking
-					player2HealthBar.health -= damage;
-					std::cout << "Player 2 hit! Health now: " <<  player1HealthBar.health << std::endl;
+					player2Stats.playerHealth -= damage;
+					std::cout << "Player 2 hit! Health now: " <<  player1Stats.playerHealth << std::endl;
 					P2charState = P2_IDLE_HIT; // Update the state to reflect being hit
-					if (player2HealthBar.health <= 0) {
+					if (player2Stats.playerHealth <= 0) {
 						std::cout << "Player 2 has been defeated!" << std::endl;
 					}
 					//player1Position.z += knockback * deltaTime;
@@ -557,8 +731,7 @@ void handleCollisions(GLFWwindow* window, float deltaTime) {
 					//player1_animator.pauseAtCurrentTime();
 				}
 
-				player2HealthBar.shakeTimer = shakeDuration;
-				//setPauseTimer(HIT_PAUSE_DURATION);
+				player2Stats.shakeTimer = shakeDuration;
 
 			}
 		}
@@ -587,74 +760,130 @@ void handleCollisions(GLFWwindow* window, float deltaTime) {
 				else {
 					// Apply damage to Player 1 if not blocking
 					//player1Health -= damage;
-					player1HealthBar.health -= damage;
-					std::cout << "Player 1 hit! Health now: " << player1HealthBar.health << std::endl;
+					player1Stats.playerHealth -= damage;
+					std::cout << "Player 1 hit! Health now: " << player1Stats.playerHealth << std::endl;
 					P1charState = P1_IDLE_HIT; // Update the state to reflect being hit
-					if (player1HealthBar.health <= 0) {
+					if (player1Stats.playerHealth <= 0) {
 						std::cout << "Player 1 has been defeated!" << std::endl;
 					}
 					player1Position.z -= knockback * deltaTime;
 					player2Position.z -= knockback * deltaTime;
 				}
 
-				player1HealthBar.shakeTimer = shakeDuration;
+				player1Stats.shakeTimer = shakeDuration;
 
 			}
 		}
 	}
 }
 
+void RenderHealthBars(Shader& shader, unsigned int texture, unsigned int borderTexture) {
 
-void RenderHealthBars(Shader& shader, unsigned int texture) {
 
-	const float maxBarWidth = 400.0f;
+	const float borderThickness = 5.0f; 
 
-	// Calculate the dynamic width based on the health ratio for both players
-	float player1HealthRatio = static_cast<float>(player1HealthBar.health) / MAX_HEALTH;
-	float player2HealthRatio = static_cast<float>(player2HealthBar.health) / MAX_HEALTH;
 
-	float player1BarWidth = maxBarWidth * player1HealthRatio;
-	float player2BarWidth = maxBarWidth * player2HealthRatio;
+	float player1HealthRatio = static_cast<float>(player1Stats.playerHealth) / MAX_HEALTH;
+	float player1BarWidth = player1Stats.healthBarSize.x * player1HealthRatio;
 
-	// Calculate shaking offset for Player 1's health bar
+	// Player 1: Calculate shaking offset
 	float player1ShakeOffsetY = 0.0f;
-	if (player1HealthBar.shakeTimer > 0.0f) {
+	if (player1Stats.shakeTimer > 0.0f) {
 		player1ShakeOffsetY = shakeIntensity * sin(20.0f * glfwGetTime());
-		player1HealthBar.shakeTimer -= deltaTime; // Reduce shake timer
-		if (player1HealthBar.shakeTimer < 0.0f) player1HealthBar.shakeTimer = 0.0f; // Clamp to 0
+		player1Stats.shakeTimer -= deltaTime;
+		if (player1Stats.shakeTimer < 0.0f) player1Stats.shakeTimer = 0.0f; // Clamp to 0
 	}
 
-	// Adjust the position for Player 1's health bar (fixed left)
-	float player1BarX = 50.0f;
-	float player1BarY = SCR_HEIGHT - 100.0f + player1ShakeOffsetY;
+	// Player 1: Render health bar
+	RenderUIElement(
+		shader, texture,
+		player1Stats.healthBarPosition.x,
+		player1Stats.healthBarPosition.y + player1ShakeOffsetY,
+		player1BarWidth,
+		player1Stats.healthBarSize.y
+	);
 
-	// Render Player 1's health bar
-	RenderUIElement(shader, texture, player1BarX, player1BarY, player1BarWidth, 40.0f);
+	// Player 1: Render health bar border
+	RenderUIElement(
+		shader, borderTexture,
+		player1Stats.healthBarPosition.x - borderThickness,
+		player1Stats.healthBarPosition.y - borderThickness + player1ShakeOffsetY,
+		player1Stats.healthBarSize.x + borderThickness * 2,
+		player1Stats.healthBarSize.y + borderThickness * 2
+	);
 
-	// Calculate shaking offset for Player 2's health bar
+	
+
+	// Player 2: Calculate health ratio and current bar width
+	float player2HealthRatio = static_cast<float>(player2Stats.playerHealth) / MAX_HEALTH;
+	float player2BarWidth = player2Stats.healthBarSize.x * player2HealthRatio;
+
+	// Player 2: Calculate shaking offset
 	float player2ShakeOffsetY = 0.0f;
-	if (player2HealthBar.shakeTimer > 0.0f) {
-		player2ShakeOffsetY = shakeIntensity * sin(20.0f * glfwGetTime()); // Oscillating shake effect
-		player2HealthBar.shakeTimer -= deltaTime; // Reduce shake timer
-		if (player2HealthBar.shakeTimer < 0.0f) player2HealthBar.shakeTimer = 0.0f; // Clamp to 0
+	if (player2Stats.shakeTimer > 0.0f) {
+		player2ShakeOffsetY = shakeIntensity * sin(20.0f * glfwGetTime());
+		player2Stats.shakeTimer -= deltaTime;
+		if (player2Stats.shakeTimer < 0.0f) player2Stats.shakeTimer = 0.0f; // Clamp to 0
 	}
 
-	// Adjust the position for Player 2's health bar (fixed right)
-	float player2BarX = SCR_WIDTH - (player1BarX + maxBarWidth) + (maxBarWidth - player2BarWidth);
-	float player2BarY = SCR_HEIGHT - 100.0f + player2ShakeOffsetY;
+	// Player 2: Adjust position dynamically based on current width
+	float player2DynamicX = player2Stats.healthBarPosition.x + (player2Stats.healthBarSize.x - player2BarWidth);
 
-	// Render Player 2's health bar
-	RenderUIElement(shader, texture, player2BarX, player2BarY, player2BarWidth, 40.0f);
+	// Player 2: Render health bar
+	RenderUIElement(
+		shader, texture,
+		player2DynamicX,
+		player2Stats.healthBarPosition.y + player2ShakeOffsetY,
+		player2BarWidth,
+		player2Stats.healthBarSize.y
+	);
 
+	// Player 2: Render health bar border
+	RenderUIElement(
+		shader, borderTexture,
+		player2Stats.healthBarPosition.x - borderThickness,
+		player2Stats.healthBarPosition.y - borderThickness + player2ShakeOffsetY,
+		player2Stats.healthBarSize.x + borderThickness * 2,
+		player2Stats.healthBarSize.y + borderThickness * 2
+	);
 
 }
 
-void UpdateTimer() {
+void RenderScoreStatus(Shader& shader, unsigned int emptyCircle, unsigned int fillCircle) {
+	float dotRadius = 20.0f;  // Radius of each circle
+	float dotSpacing = 30.0f;  // Space between dots
 
-	if (currentState == GAMEPLAY) {
-		timer.start();
+	// Calculate the starting position for Player 1's dots (below the health bar)
+	glm::vec2 player1DotStart = player1Stats.healthBarPosition + glm::vec2(0.0f, player1Stats.healthBarSize.y - 90.0f);
 
+	// Render Player 1's score dots
+	for (int i = 0; i < 3; i++) {
+		float xOffset = i * (dotRadius * 2 + dotSpacing); // Horizontal offset for dots
 
+		if (i < player1Stats.playerScore) { // Filled dots based on the player's score
+			RenderUIElement(shader, fillCircle, player1DotStart.x + xOffset, player1DotStart.y, dotRadius * 2, dotRadius * 2);
+		}
+
+		RenderUIElement(shader, emptyCircle, player1DotStart.x + xOffset, player1DotStart.y, dotRadius * 2, dotRadius * 2);
+		
+	}
+
+	// Calculate the starting position for Player 2's dots (below the health bar)
+	glm::vec2 player2DotStart = player2Stats.healthBarPosition + glm::vec2(
+		player2Stats.healthBarSize.x - (3 * (dotRadius * 2 + dotSpacing) - dotSpacing), // Align dots to the right
+		player2Stats.healthBarSize.y - 90.0f
+	);
+
+	// Render Player 2's score dots
+	for (int i = 0; i < 3; i++) {
+		float xOffset = i * (dotRadius * 2 + dotSpacing); // Horizontal offset for dots
+
+		if (i < player2Stats.playerScore) { // Filled dots based on the player's score
+			RenderUIElement(shader, fillCircle, player2DotStart.x + xOffset, player2DotStart.y, dotRadius * 2, dotRadius * 2);
+		}
+
+		RenderUIElement(shader, emptyCircle, player2DotStart.x + xOffset, player2DotStart.y, dotRadius * 2, dotRadius * 2);
+		
 	}
 
 }
@@ -692,12 +921,9 @@ int main()
 	}
 	glfwMakeContextCurrent(window);
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-
-	if (currentState >= GAMEPLAY) {
-		glfwSetCursorPosCallback(window, mouse_callback);
-	}
-		
-
+	
+	glfwSetCursorPosCallback(window, mouse_callback);
+	
 	glfwSetScrollCallback(window, scroll_callback);
 
 	// tell GLFW to capture our mouse
@@ -734,8 +960,19 @@ int main()
 	Shader backgroundShader("Shaders/PBR/background.vs", "Shaders/PBR/background.fs");
 
 	Shader textShader("Shaders/text.vs", "Shaders/text.fs");
-	
 	Shader UIShader("Shaders/UIShader.vs", "Shaders/UIShader.fs");
+
+	Shader skyboxShader("Shaders/skybox/skybox.vs", "Shaders/skybox/skybox.fs");
+	std::vector<std::string> faces = {
+	"Textures/skybox/sunset/px.jpg",
+	"Textures/skybox/sunset/nx.jpg",
+	"Textures/skybox/sunset/py.jpg",
+	"Textures/skybox/sunset/ny.jpg",
+	"Textures/skybox/sunset/pz.jpg",
+	"Textures/skybox/sunset/nz.jpg"
+	};
+
+	Skybox skybox(faces, skyboxShader.getID());
 
 	// load models
 	// -----------
@@ -768,7 +1005,10 @@ int main()
 	blockAnimationP2.loadAnimation("Object/Wrestler/Left Block.dae", &player2, 1.0f);
 	hitAnimationP2.loadAnimation("Object/Wrestler/Head Hit.dae", &player2, 1.5f);
 
-	Model Scene("Object/Scene/Snowtown.obj");
+
+	stbi_set_flip_vertically_on_load(false);
+
+	Model Scene("Object/Scene/Low Poly Winter Scene.obj");
 
 	pbrShader.use();
 	pbrShader.setInt("irradianceMap", 0);
@@ -788,11 +1028,15 @@ int main()
 	initTextRendering("Textures/Fonts/Cybergame-Regular Italic.ttf");
 	glm::mat4 projection = glm::ortho(0.0f, static_cast<float>(SCR_WIDTH), 0.0f, static_cast<float>(SCR_HEIGHT));
 	textShader.use();
+
 	glUniformMatrix4fv(glGetUniformLocation(textShader.ID, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
 
 	initUIRendering();
-	unsigned int healthBarTexture = loadTexture("Textures/UI/Test.png");
+	unsigned int healthBarTexture = loadTexture("Textures/UI/Health Bar/HP_Bar.png");
+	unsigned int healthBarBorderTexture = loadTexture("Textures/UI/Health Bar/HP_Border.png");
 
+	unsigned int emptyCircleTexture = loadTexture("Textures/UI/Health Bar/Dot_01.png");
+	unsigned int fillCircletexture = loadTexture("Textures/UI/Health Bar/Dot_02.png");
 
 	// pbr: setup framebuffer
    // ----------------------
@@ -810,7 +1054,7 @@ int main()
 	// ---------------------------------
 	stbi_set_flip_vertically_on_load(true);
 	int width, height, nrComponents;
-	float* data = stbi_loadf("Textures/HDR/newport_loft.hdr", &width, &height, &nrComponents, 0);
+	float* data = stbi_loadf("Textures/HDR/sky.hdr", &width, &height, &nrComponents, 0);
 	unsigned int hdrTexture;
 	if (data)
 	{
@@ -1010,6 +1254,7 @@ int main()
 		pbrShader.setVec3("lightColors[" + std::to_string(i) + "]", lightColors[i]);
 	}
 
+
 	
 	
 	//INITIAL STATES FOR GAME INTRO
@@ -1062,25 +1307,6 @@ int main()
 		glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		switch (currentState) {
-		case GAME_INTRO:
-		case INTRO_P1:
-		case INTRO_P2:
-			updateIntroCamera(window, deltaTime);
-			updateText(textShader, deltaTime);
-			break;
-		case COUNTDOWN:
-			startCountdown(deltaTime);
-			break;
-		case GAMEPLAY:
-			// Gameplay logic
-			updateCapsules();
-			handleCollisions(window,deltaTime);
-			UpdateStateP1(window, player1_animator, P1charState, blendAmountP1);
-			UpdateStateP2(window, player2_animator, P2charState, blendAmountP2);
-			timer.update();
-			break;
-		}
 
 		pbrShader.use();
 
@@ -1099,10 +1325,17 @@ int main()
 		glBindTexture(GL_TEXTURE_2D, brdfLUTTexture);
 
 		//--------------PBR--------------------
-		/*glm::mat4 model = glm::mat4(1.0f);
-		pbrShader.setMat4("model", glm::transpose(glm::inverse(glm::mat3(model))));
-		pbrShader.setMat3("normalMatrix", glm::transpose(glm::inverse(glm::mat3(model))));
-		Scene.Draw(pbrShader);*/
+
+		pbrShader.use();
+
+		glm::mat4 modelScene = glm::mat4(1.0f);
+		modelScene = glm::translate(modelScene, glm::vec3(5.0f, -0.5f, 1.0f));
+		modelScene = glm::rotate(modelScene, glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+		modelScene = glm::scale(modelScene, glm::vec3(0.8f, 0.8f, 0.8f));
+
+		pbrShader.setMat4("model", modelScene);
+		pbrShader.setMat3("normalMatrix", glm::transpose(glm::inverse(glm::mat3(modelScene))));
+		Scene.Draw(pbrShader);
 
 		// don't forget to enable shader before setting uniforms
 		ourShader.use();
@@ -1144,19 +1377,45 @@ int main()
 		}
 		player2.Draw(ourShader);
 
-		
+		skybox.draw(view, projection);
+
+		switch (currentState) {
+		case GAME_INTRO:
+		case INTRO_P1:
+		case INTRO_P2:
+		case TRANSITION_TO_GAMEPLAY:
+			updateIntroCamera(window, deltaTime);
+			break;
+		case START_ROUND:
+			startCountdown();
+			break;
+		case GAMEPLAY:
+			// Gameplay logic
+			updateCapsules();
+			handleCollisions(window, deltaTime);
+			UpdateStateP1(window, player1_animator, P1charState, blendAmountP1);
+			UpdateStateP2(window, player2_animator, P2charState, blendAmountP2);
+			updateGameplay();
+
+			break;
+
+		case P1_WINS:
+		case P2_WINS:
+		case PLAYERS_TIE:
+			updateEndCamera(window, deltaTime);
+			break;
+		}
+
+
 		if (gameStart) {
 
 			UIShader.use();
-			RenderHealthBars(UIShader, healthBarTexture);
-
-			std::string timerText = timer.getFormattedTime();
-			RenderText(textShader, timerText, (SCR_WIDTH / 2.0f) - 20.0f , static_cast<float>(SCR_HEIGHT) - 100.0f, 1.0f, glm::vec3(1.0f, 1.0f, 1.0f));
+			RenderHealthBars(UIShader, healthBarTexture, healthBarBorderTexture);
+			RenderScoreStatus(UIShader, emptyCircleTexture, fillCircletexture );
 
 		}
 
-		
-		
+		updateText(textShader, deltaTime);
 
 
 		// glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)

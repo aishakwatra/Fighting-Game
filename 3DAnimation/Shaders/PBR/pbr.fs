@@ -17,7 +17,7 @@ uniform samplerCube prefilterMap;
 uniform sampler2D brdfLUT;
 
 // lights
-uniform vec3 lightPositions[4];
+uniform vec3 lightPositions[6];
 uniform vec3 lightColors[4];
 
 uniform vec3 camPos;
@@ -98,7 +98,7 @@ void main()
     albedo = (albedo == vec3(0.0)) ? vec3(1.0) : albedo;
     albedo = pow(albedo, vec3(2.2)); 
 
-    float roughness = 0.8f;
+    float roughness = 1.0f;
 
 
     // Metallic (default to 0.0 - non-metallic)
@@ -116,7 +116,7 @@ void main()
     float ao = texture(aoMap, TexCoords).r;
     ao = (ao == 0.0) ? 1.0 : ao;
        
-    // input lighting data
+     // input lighting data
     vec3 N = Normal;
     vec3 V = normalize(camPos - WorldPos);
     vec3 R = reflect(-V, N); 
