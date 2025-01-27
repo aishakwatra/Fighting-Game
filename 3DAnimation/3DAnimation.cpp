@@ -249,9 +249,16 @@ glm::vec3 lerpVec3(const glm::vec3& start, const glm::vec3& end, float t) {
 void restartRound() {
 
 	currentState = START_ROUND;
-	countdownTimer.resetToDefault(7.0f);
+	countdownTimer.resetToDefault(7.0f);d
 	countdownTimer.start();
 	currentRound++;
+	player1Stats.playerHealth = MAX_HEALTH;
+	player2Stats.playerHealth = MAX_HEALTH;
+
+	player2Position = player2gamePosition;
+	player1Position = player1gamePosition;
+	player1_animator.PlayAnimation(&idleAnimationP1, nullptr, 0.0f, 0.0f, 0.0f);
+	player2_animator.PlayAnimation(&idleAnimationP2, nullptr, 0.0f, 0.0f, 0.0f);
 
 }
 
@@ -386,9 +393,16 @@ void updateIntroCamera(GLFWwindow* window, float deltaTime) {
 		}
 	}
 
+
+
+
+
+
+
+
+
+
 }
-
-
 
 
 void updateEndCamera(GLFWwindow* window, float deltaTime) {
@@ -812,10 +826,13 @@ void RenderScoreStatus(Shader& shader, unsigned int emptyCircle, unsigned int fi
 	// Render Player 1's score dots
 	for (int i = 0; i < 3; i++) {
 		float xOffset = i * (dotRadius * 2 + dotSpacing); // Horizontal offset for dots
-		RenderUIElement(shader, emptyCircle, player1DotStart.x + xOffset, player1DotStart.y, dotRadius * 2, dotRadius * 2);
+
 		if (i < player1Stats.playerScore) { // Filled dots based on the player's score
 			RenderUIElement(shader, fillCircle, player1DotStart.x + xOffset, player1DotStart.y, dotRadius * 2, dotRadius * 2);
 		}
+
+		RenderUIElement(shader, emptyCircle, player1DotStart.x + xOffset, player1DotStart.y, dotRadius * 2, dotRadius * 2);
+		
 	}
 
 	// Calculate the starting position for Player 2's dots (below the health bar)
@@ -827,10 +844,13 @@ void RenderScoreStatus(Shader& shader, unsigned int emptyCircle, unsigned int fi
 	// Render Player 2's score dots
 	for (int i = 0; i < 3; i++) {
 		float xOffset = i * (dotRadius * 2 + dotSpacing); // Horizontal offset for dots
-		RenderUIElement(shader, emptyCircle, player2DotStart.x + xOffset, player2DotStart.y, dotRadius * 2, dotRadius * 2);
+
 		if (i < player2Stats.playerScore) { // Filled dots based on the player's score
 			RenderUIElement(shader, fillCircle, player2DotStart.x + xOffset, player2DotStart.y, dotRadius * 2, dotRadius * 2);
 		}
+
+		RenderUIElement(shader, emptyCircle, player2DotStart.x + xOffset, player2DotStart.y, dotRadius * 2, dotRadius * 2);
+		
 	}
 
 }
