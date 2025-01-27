@@ -274,7 +274,7 @@ void updateIntroCamera(GLFWwindow* window, float deltaTime) {
 		introTimer += deltaTime;
 
 		// Transition to INTRO_P1 state
-		if (introTimer >= 10.0f || glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
+		if (introTimer >= 5.0f || glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
 			currentState = INTRO_P1;
 			introTimer = 0.0f;
 			transitionTimer = 0.0f;
@@ -436,8 +436,8 @@ void updateText(Shader& textShader, float deltaTime) {
 		static float gameNameScale = 15.0f; // Start extremely large
 		static float slamTimer = 0.0f;
 		const float minScale = 1.0f;        // Normal size after the slam
-		const float slamDuration = 15.0f;   // Duration of the slam effect
-		const float slamSpeed = 2.0f;     // Speed of the scaling down
+		const float slamDuration = 7.0f;   // Duration of the slam effect
+		const float slamSpeed = 5.0f;     // Speed of the scaling down
 
 		// Slam animation
 		if (elapsedTime < slamDuration) {
@@ -730,48 +730,111 @@ void handleCollisions(GLFWwindow* window, float deltaTime) {
 	}
 }
 
-void RenderHealthBars(Shader& shader, unsigned int texture) {
+void RenderHealthBars(Shader& shader, unsigned int texture, unsigned int borderTexture) {
 
-	const float maxBarWidth = 400.0f;
 
-	// Calculate the dynamic width based on the health ratio for both players
+	const float borderThickness = 5.0f; 
+
+
 	float player1HealthRatio = static_cast<float>(player1Stats.playerHealth) / MAX_HEALTH;
-	float player2HealthRatio = static_cast<float>(player2Stats.playerHealth) / MAX_HEALTH;
+	float player1BarWidth = player1Stats.healthBarSize.x * player1HealthRatio;
 
-	float player1BarWidth = maxBarWidth * player1HealthRatio;
-	float player2BarWidth = maxBarWidth * player2HealthRatio;
-
-	// Calculate shaking offset for Player 1's health bar
+	// Player 1: Calculate shaking offset
 	float player1ShakeOffsetY = 0.0f;
 	if (player1Stats.shakeTimer > 0.0f) {
 		player1ShakeOffsetY = shakeIntensity * sin(20.0f * glfwGetTime());
-		player1Stats.shakeTimer -= deltaTime; // Reduce shake timer
+		player1Stats.shakeTimer -= deltaTime;
 		if (player1Stats.shakeTimer < 0.0f) player1Stats.shakeTimer = 0.0f; // Clamp to 0
 	}
 
-	// Adjust the position for Player 1's health bar (fixed left)
-	float player1BarX = 50.0f;
-	float player1BarY = SCR_HEIGHT - 100.0f + player1ShakeOffsetY;
+	// Player 1: Render health bar
+	RenderUIElement(
+		shader, texture,
+		player1Stats.healthBarPosition.x,
+		player1Stats.healthBarPosition.y + player1ShakeOffsetY,
+		player1BarWidth,
+		player1Stats.healthBarSize.y
+	);
 
-	// Render Player 1's health bar
-	RenderUIElement(shader, texture, player1BarX, player1BarY, player1BarWidth, 40.0f);
+	// Player 1: Render health bar border
+	RenderUIElement(
+		shader, borderTexture,
+		player1Stats.healthBarPosition.x - borderThickness,
+		player1Stats.healthBarPosition.y - borderThickness + player1ShakeOffsetY,
+		player1Stats.healthBarSize.x + borderThickness * 2,
+		player1Stats.healthBarSize.y + borderThickness * 2
+	);
 
-	// Calculate shaking offset for Player 2's health bar
+	
+
+	// Player 2: Calculate health ratio and current bar width
+	float player2HealthRatio = static_cast<float>(player2Stats.playerHealth) / MAX_HEALTH;
+	float player2BarWidth = player2Stats.healthBarSize.x * player2HealthRatio;
+
+	// Player 2: Calculate shaking offset
 	float player2ShakeOffsetY = 0.0f;
 	if (player2Stats.shakeTimer > 0.0f) {
-		player2ShakeOffsetY = shakeIntensity * sin(20.0f * glfwGetTime()); // Oscillating shake effect
-		player2Stats.shakeTimer -= deltaTime; // Reduce shake timer
+		player2ShakeOffsetY = shakeIntensity * sin(20.0f * glfwGetTime());
+		player2Stats.shakeTimer -= deltaTime;
 		if (player2Stats.shakeTimer < 0.0f) player2Stats.shakeTimer = 0.0f; // Clamp to 0
 	}
 
-	// Adjust the position for Player 2's health bar (fixed right)
-	float player2BarX = SCR_WIDTH - (player1BarX + maxBarWidth) + (maxBarWidth - player2BarWidth);
-	float player2BarY = SCR_HEIGHT - 100.0f + player2ShakeOffsetY;
+	// Player 2: Adjust position dynamically based on current width
+	float player2DynamicX = player2Stats.healthBarPosition.x + (player2Stats.healthBarSize.x - player2BarWidth);
 
-	// Render Player 2's health bar
-	RenderUIElement(shader, texture, player2BarX, player2BarY, player2BarWidth, 40.0f);
+	// Player 2: Render health bar
+	RenderUIElement(
+		shader, texture,
+		player2DynamicX,
+		player2Stats.healthBarPosition.y + player2ShakeOffsetY,
+		player2BarWidth,
+		player2Stats.healthBarSize.y
+	);
+
+	// Player 2: Render health bar border
+	RenderUIElement(
+		shader, borderTexture,
+		player2Stats.healthBarPosition.x - borderThickness,
+		player2Stats.healthBarPosition.y - borderThickness + player2ShakeOffsetY,
+		player2Stats.healthBarSize.x + borderThickness * 2,
+		player2Stats.healthBarSize.y + borderThickness * 2
+	);
 
 }
+
+void RenderScoreStatus(Shader& shader, unsigned int emptyCircle, unsigned int fillCircle) {
+	float dotRadius = 20.0f;  // Radius of each circle
+	float dotSpacing = 30.0f;  // Space between dots
+
+	// Calculate the starting position for Player 1's dots (below the health bar)
+	glm::vec2 player1DotStart = player1Stats.healthBarPosition + glm::vec2(0.0f, player1Stats.healthBarSize.y - 90.0f);
+
+	// Render Player 1's score dots
+	for (int i = 0; i < 3; i++) {
+		float xOffset = i * (dotRadius * 2 + dotSpacing); // Horizontal offset for dots
+		RenderUIElement(shader, emptyCircle, player1DotStart.x + xOffset, player1DotStart.y, dotRadius * 2, dotRadius * 2);
+		if (i < player1Stats.playerScore) { // Filled dots based on the player's score
+			RenderUIElement(shader, fillCircle, player1DotStart.x + xOffset, player1DotStart.y, dotRadius * 2, dotRadius * 2);
+		}
+	}
+
+	// Calculate the starting position for Player 2's dots (below the health bar)
+	glm::vec2 player2DotStart = player2Stats.healthBarPosition + glm::vec2(
+		player2Stats.healthBarSize.x - (3 * (dotRadius * 2 + dotSpacing) - dotSpacing), // Align dots to the right
+		player2Stats.healthBarSize.y - 90.0f
+	);
+
+	// Render Player 2's score dots
+	for (int i = 0; i < 3; i++) {
+		float xOffset = i * (dotRadius * 2 + dotSpacing); // Horizontal offset for dots
+		RenderUIElement(shader, emptyCircle, player2DotStart.x + xOffset, player2DotStart.y, dotRadius * 2, dotRadius * 2);
+		if (i < player2Stats.playerScore) { // Filled dots based on the player's score
+			RenderUIElement(shader, fillCircle, player2DotStart.x + xOffset, player2DotStart.y, dotRadius * 2, dotRadius * 2);
+		}
+	}
+
+}
+
 
 int main()
 {
@@ -916,8 +979,11 @@ int main()
 	glUniformMatrix4fv(glGetUniformLocation(textShader.ID, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
 
 	initUIRendering();
-	unsigned int healthBarTexture = loadTexture("Textures/UI/Test.png");
+	unsigned int healthBarTexture = loadTexture("Textures/UI/Health Bar/HP_Bar.png");
+	unsigned int healthBarBorderTexture = loadTexture("Textures/UI/Health Bar/HP_Border.png");
 
+	unsigned int emptyCircleTexture = loadTexture("Textures/UI/Health Bar/Dot_01.png");
+	unsigned int fillCircletexture = loadTexture("Textures/UI/Health Bar/Dot_02.png");
 
 	// pbr: setup framebuffer
    // ----------------------
@@ -1291,7 +1357,8 @@ int main()
 		if (gameStart) {
 
 			UIShader.use();
-			RenderHealthBars(UIShader, healthBarTexture);
+			RenderHealthBars(UIShader, healthBarTexture, healthBarBorderTexture);
+			RenderScoreStatus(UIShader, emptyCircleTexture, fillCircletexture );
 
 		}
 
