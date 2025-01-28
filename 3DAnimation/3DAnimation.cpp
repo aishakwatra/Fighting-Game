@@ -260,7 +260,7 @@ void setPauseTimer(float duration) {
 void restartRound() {
 
 	currentState = START_ROUND;
-	countdownTimer.resetToDefault(7.0f);d
+	countdownTimer.resetToDefault(7.0f);
 	countdownTimer.start();
 	currentRound++;
 	player1Stats.playerHealth = MAX_HEALTH;
