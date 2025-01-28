@@ -178,6 +178,8 @@ Animation punchAnimationP1;
 Animation kickAnimationP1;
 Animation blockAnimationP1;
 Animation hitAnimationP1;
+Animation victoryAnimationP1;
+Animation defeatAnimationP1;
 
 ModelAnim player2;
 Animation introAnimationP2;
@@ -188,6 +190,8 @@ Animation punchAnimationP2;
 Animation kickAnimationP2;
 Animation blockAnimationP2;
 Animation hitAnimationP2;
+Animation victoryAnimationP2;
+Animation defeatAnimationP2;
 
 glm::vec3 player1Position = glm::vec3(0.0f, -0.4f, 0.0f);
 glm::vec3 player2Position = glm::vec3(0.0f, -0.4f, 3.0f);
@@ -408,11 +412,6 @@ void updateIntroCamera(GLFWwindow* window, float deltaTime) {
 
 
 
-
-
-
-
-
 }
 
 
@@ -422,29 +421,46 @@ void updateEndCamera(GLFWwindow* window, float deltaTime) {
 
 	elapsedTime += deltaTime;
 
-	if (currentState == P1_WINS) {
+	static int lastState = -1; // To track the last state and avoid replaying animations
 
+	if (currentState != lastState) {
+		// Only execute this block if the state has changed
+		if (currentState == P1_WINS) {
 
-		//camera lerp to player 1
-		//winning dance
+			//camera lerp to player 1
+			//winning dance
 
+			player1_animator.PlayAnimation(&victoryAnimationP1, nullptr, 0.0f, 0.0f, 0.0f);
+			player2_animator.PlayAnimation(&defeatAnimationP2, nullptr, 0.0f, 0.0f, 0.0f);
 
-	}
-	else if (currentState == P2_WINS) {
+		}
+		else if (currentState == P2_WINS) {
 
-		//camera lerp to player 2
-		//winning dance
+			//camera lerp to player 2
+			//winning dance
 
-	} else if (currentState == PLAYERS_TIE) {
+			player1_animator.PlayAnimation(&defeatAnimationP1, nullptr, 0.0f, 0.0f, 0.0f);
+			player2_animator.PlayAnimation(&victoryAnimationP2, nullptr, 0.0f, 0.0f, 0.0f);
 
-		//normal camera view
-		
-		
+		}
+		else if (currentState == PLAYERS_TIE) {
+
+			//normal camera view
+			player1_animator.PlayAnimation(&idleAnimationP1, nullptr, 0.0f, 0.0f, 0.0f);
+			player2_animator.PlayAnimation(&idleAnimationP2, nullptr, 0.0f, 0.0f, 0.0f);
+
+		}
+
+		lastState = currentState;
+
 	}
 
 	if (elapsedTime >= 5.0f) {
 		restartRound();
+		elapsedTime = 0.0f;
+		lastState = -1;
 	}
+
 
 }
 
@@ -714,7 +730,7 @@ void handleCollisions(GLFWwindow* window, float deltaTime) {
 				else {
 					// Apply damage to Player 2 if not blocking
 					player2Stats.playerHealth -= damage;
-					std::cout << "Player 2 hit! Health now: " <<  player1Stats.playerHealth << std::endl;
+					std::cout << "Player 2 hit! Health now: " <<  player2Stats.playerHealth << std::endl;
 					P2charState = P2_IDLE_HIT; // Update the state to reflect being hit
 					if (player2Stats.playerHealth <= 0) {
 						std::cout << "Player 2 has been defeated!" << std::endl;
@@ -992,6 +1008,8 @@ int main()
 	kickAnimationP1.AddDamageKeyframe(0.7f, P1kickDamage);
 	blockAnimationP1.loadAnimation("Object/Vegas/Center Block.dae", &player1,1.2f);
 	hitAnimationP1.loadAnimation("Object/Vegas/Head Hit Punch.dae", &player1, 1.5f);
+	defeatAnimationP1.loadAnimation("Object/Vegas/Defeat.dae", &player1, 1.0f);
+	victoryAnimationP1.loadAnimation("Object/Vegas/Victory Idle.dae", &player1, 1.0f);
 
 	player2.loadModel("Object/Wrestler/Ch43_nonPBR.dae");
 	introAnimationP2.loadAnimation("Object/Wrestler/Catwalk Walk.dae", &player2);
@@ -1004,7 +1022,8 @@ int main()
 	kickAnimationP2.AddDamageKeyframe(0.7f, P2kickDamage);
 	blockAnimationP2.loadAnimation("Object/Wrestler/Left Block.dae", &player2, 1.0f);
 	hitAnimationP2.loadAnimation("Object/Wrestler/Head Hit.dae", &player2, 1.5f);
-
+	defeatAnimationP2.loadAnimation("Object/Wrestler/Defeat.dae", &player2, 1.0f);
+	victoryAnimationP2.loadAnimation("Object/Wrestler/Victory.dae", &player2, 1.0f);
 
 	stbi_set_flip_vertically_on_load(false);
 
@@ -1396,7 +1415,6 @@ int main()
 			UpdateStateP1(window, player1_animator, P1charState, blendAmountP1);
 			UpdateStateP2(window, player2_animator, P2charState, blendAmountP2);
 			updateGameplay();
-
 			break;
 
 		case P1_WINS:
@@ -1406,13 +1424,9 @@ int main()
 			break;
 		}
 
-
-		if (gameStart) {
-
-			UIShader.use();
+		if (currentState >= GAMEPLAY) {
 			RenderHealthBars(UIShader, healthBarTexture, healthBarBorderTexture);
-			RenderScoreStatus(UIShader, emptyCircleTexture, fillCircletexture );
-
+			RenderScoreStatus(UIShader, emptyCircleTexture, fillCircletexture);
 		}
 
 		updateText(textShader, deltaTime);
