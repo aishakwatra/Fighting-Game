@@ -19,6 +19,19 @@
 #include <chrono>
 #include <thread>
 #include "Skybox.h"
+#include <irrKlang/irrKlang.h>
+
+using namespace irrklang;
+
+ISoundEngine* soundEngine;
+ISoundSource* punchSound;
+ISoundSource* kickSound;
+ISoundSource* P1swishSound;
+ISoundSource* P2swishSound;
+ISoundSource* BGM;
+ISoundSource* introP1Sound;
+ISoundSource* introP2Sound;
+ISoundSource* crowdP1Sound;
 
 #define MAX_HEALTH 150.0f
 #define HIT_PAUSE_DURATION 0.1f // adjust the duration as necessary
@@ -202,7 +215,7 @@ glm::vec3 player1gamePosition = glm::vec3(0.0f, -0.4f, 0.0f);
 glm::vec3 player2gamePosition = glm::vec3(0.0f, -0.4f, 3.0f);
 float moveSpeed = 0.9f;
 float knockback = 1.0f;
-int P1punchDamage = 1;
+int P1punchDamage = 2;
 int P1kickDamage = 4;
 int P2punchDamage = 4;
 int P2kickDamage = 6;
@@ -298,6 +311,10 @@ void updateIntroCamera(GLFWwindow* window, float deltaTime) {
 		// Transition to INTRO_P1 state
 		if (introTimer >= 5.0f || glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
 			currentState = INTRO_P1;
+			if (soundEngine->isCurrentlyPlaying(introP1Sound) == false)
+				soundEngine->play2D(introP1Sound, false);
+			if (soundEngine->isCurrentlyPlaying(crowdP1Sound) == false)
+				soundEngine->play2D(crowdP1Sound, false);
 			introTimer = 0.0f;
 			transitionTimer = 0.0f;
 			player1_animator.PlayAnimation(&introAnimationP1, nullptr, 0.0f, 0.0f, 0.0f);
@@ -338,6 +355,11 @@ void updateIntroCamera(GLFWwindow* window, float deltaTime) {
 
 		if (introTimer >= introDurationP1 || glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
 			currentState = INTRO_P2;
+			soundEngine->stopAllSounds();
+			if (soundEngine->isCurrentlyPlaying(introP2Sound) == false)
+				soundEngine->play2D(introP2Sound, false);
+			if (soundEngine->isCurrentlyPlaying(crowdP1Sound) == false)
+				soundEngine->play2D(crowdP1Sound, false);
 			introTimer = 0.0f;
 			transitionTimer = 0.0f; // Reset transition timer
 			player1_animator.PlayAnimation(&idleAnimationP1, nullptr, 0.0f, 0.0f, 0.0f);
@@ -366,6 +388,7 @@ void updateIntroCamera(GLFWwindow* window, float deltaTime) {
 
 		if (introTimer >= introDurationP2 || glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
 			currentState = TRANSITION_TO_GAMEPLAY;
+			soundEngine->stopAllSounds();
 			introTimer = 0.0f;
 			transitionTimer = 0.0f; // Reset transition timer
 
@@ -378,7 +401,7 @@ void updateIntroCamera(GLFWwindow* window, float deltaTime) {
 
 	}
 
-	else if (currentState == TRANSITION_TO_GAMEPLAY) {
+	if (currentState == TRANSITION_TO_GAMEPLAY) {
 
 		introTimer += deltaTime;
 
@@ -400,7 +423,7 @@ void updateIntroCamera(GLFWwindow* window, float deltaTime) {
 
 		}
 
-		if (introTimer >= transitionGameplayDuration || glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
+		if (introTimer >= transitionGameplayDuration) {
 			introTimer = 0.0f;
 			transitionTimer = 0.0f; // Reset transition timer
 			restartRound(); // Start the round
@@ -490,6 +513,7 @@ void updateText(Shader& textShader, float deltaTime) {
 	}
 	else if (currentState == INTRO_P1) {
 
+		
 		elapsedTime = 0.0f;
 
 		//Slice in from the left
@@ -504,11 +528,12 @@ void updateText(Shader& textShader, float deltaTime) {
 	}
 	else if (currentState == INTRO_P2) {
 
+		
 		elapsedTime = 0.0f;
 
 		// Slice in from the right
 		static float player2X = SCR_WIDTH + 1000.0f; // Off-screen start
-		const float targetX = SCR_WIDTH - 300.0f;   // Final position
+		const float targetX = SCR_WIDTH - 400.0f;   // Final position
 		const float speed = 300.0f;                 // Sliding speed
 
 		player2X = glm::max(player2X - speed * deltaTime, targetX);
@@ -518,7 +543,7 @@ void updateText(Shader& textShader, float deltaTime) {
 	}
 
 	else if (currentState == START_ROUND) {
-
+		//soundEngine->stopAllSounds();
 		if (countdownTimer.getRemainingTime() > 3.999f) {
 			
 			std::string roundText = "ROUND " + std::to_string(currentRound);
@@ -609,11 +634,11 @@ void updateCapsules() {
 	// Adjust these values based on the character's current pose and animation
 	player1Capsule.pointA = player1Position + glm::vec3(0.0f, 1.2f, 0.0f); // example values
 	player1Capsule.pointB = player1Position + glm::vec3(0.0f, 0.4f, 0.0f);
-	player1Capsule.radius = 0.4f;
+	player1Capsule.radius = 0.5f;
 
 	player2Capsule.pointA = player2Position + glm::vec3(0.0f, 1.2f, 0.0f);
 	player2Capsule.pointB = player2Position + glm::vec3(0.0f, 0.4f, 0.0f);
-	player2Capsule.radius = 0.4f;
+	player2Capsule.radius = 0.5f;
 }
 
 float segmentSegmentDistance(const glm::vec3& p1, const glm::vec3& p2, const glm::vec3& q1, const glm::vec3& q2) {
@@ -723,6 +748,7 @@ void handleCollisions(GLFWwindow* window, float deltaTime) {
 					P2charState = P2_IDLE_BLOCK;
 					//player1Position.z += knockback * deltaTime;
 					player2Position.z += knockback * deltaTime;
+					player1Position.z += knockback * deltaTime;
 					//player1_animator.pauseAtCurrentTime();
 					//player1_animator.pauseAtCurrentTime();
 					
@@ -739,15 +765,17 @@ void handleCollisions(GLFWwindow* window, float deltaTime) {
 					if (isP1Kicked) {
 						// Apply additional knockback and trigger fall animation for kicks
 						player2Position.z += knockback * 5 * deltaTime; // Double knockback for kicks
-						
+						soundEngine->play2D(kickSound, false);
 					}
 					player2Position.z += knockback * deltaTime;
-
+					player1Position.z += knockback * deltaTime;
+					//soundEngine->play2D(punchSound, false);
 					//player1_animator.pauseAtCurrentTime();
 					//player1_animator.pauseAtCurrentTime();
+					player2Stats.shakeTimer = shakeDuration;
 				}
 
-				player2Stats.shakeTimer = shakeDuration;
+				
 
 			}
 		}
@@ -756,6 +784,7 @@ void handleCollisions(GLFWwindow* window, float deltaTime) {
 		if (P2charState == P2_PUNCH_IDLE || P2charState == P2_KICK_IDLE) {
 			float animationTime = player2_animator.getCurrentAnimationTime(); // Get the current animation time
 			int damage = 0;
+			bool isP2Kicked = false;
 			if (P2charState == P2_PUNCH_IDLE) {
 				damage = punchAnimationP2.getDamageForTime(animationTime); // Check for damage at the current animation time
 			}
@@ -769,24 +798,36 @@ void handleCollisions(GLFWwindow* window, float deltaTime) {
 					std::cout << "Player 1 blocked the attack!" << std::endl;
 					//player2_animator.PlayAnimation(&idleAnimationP2, &blockAnimationP2, animator.m_CurrentTime, 0.0f, blendAmount);
 					P1charState = P1_IDLE_BLOCK;
-					player1Position.z -= knockback * deltaTime;
-					player2Position.z -= knockback * deltaTime;
+					//player1Position.z += knockback * deltaTime;
+					player1Position.z += knockback * deltaTime;
+					player2Position.z += knockback * deltaTime;
+					//player1_animator.pauseAtCurrentTime();
+					//player1_animator.pauseAtCurrentTime();
 
 				}
 				else {
-					// Apply damage to Player 1 if not blocking
-					//player1Health -= damage;
+					// Apply damage to Player 2 if not blocking
 					player1Stats.playerHealth -= damage;
 					std::cout << "Player 1 hit! Health now: " << player1Stats.playerHealth << std::endl;
 					P1charState = P1_IDLE_HIT; // Update the state to reflect being hit
 					if (player1Stats.playerHealth <= 0) {
 						std::cout << "Player 1 has been defeated!" << std::endl;
 					}
-					player1Position.z -= knockback * deltaTime;
-					player2Position.z -= knockback * deltaTime;
+					//player1Position.z += knockback * deltaTime;
+					if (isP2Kicked) {
+						// Apply additional knockback and trigger fall animation for kicks
+						player1Position.z += knockback * 5 * deltaTime; // Double knockback for kicks
+						//soundEngine->play2D(kickSound, false);
+					}
+					player1Position.z += knockback * deltaTime;
+					player2Position.z += knockback * deltaTime;
+					//soundEngine->play2D(punchSound, false);
+					//player1_animator.pauseAtCurrentTime();
+					//player1_animator.pauseAtCurrentTime();
+					player1Stats.shakeTimer = shakeDuration;
 				}
 
-				player1Stats.shakeTimer = shakeDuration;
+				
 
 			}
 		}
@@ -1274,7 +1315,21 @@ int main()
 	}
 
 
-	
+	 soundEngine = createIrrKlangDevice();
+	if (!soundEngine) {
+		std::cerr << "Could not startup engine" << std::endl;
+		return -1; // error starting up the engine
+	}
+
+	 punchSound = soundEngine->addSoundSourceFromFile("Sounds/punch.mp3");
+	 kickSound = soundEngine->addSoundSourceFromFile("Sounds/kick.mp3");
+	 P1swishSound = soundEngine->addSoundSourceFromFile("Sounds/swish.mp3");
+	 P2swishSound = soundEngine->addSoundSourceFromFile("Sounds/swish.mp3");
+	 BGM = soundEngine->addSoundSourceFromFile("Sounds/Fight or Flight.mp3");
+	 introP1Sound = soundEngine->addSoundSourceFromFile("Sounds/IntroP1.mp3");
+	 crowdP1Sound = soundEngine->addSoundSourceFromFile("Sounds/crowd.mp3");
+	 introP2Sound = soundEngine->addSoundSourceFromFile("Sounds/IntroP2.mp3");
+
 	
 	//INITIAL STATES FOR GAME INTRO
 	//---------------------------------------------------------------
@@ -1296,6 +1351,8 @@ int main()
 	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	
 
+	punchSound->setDefaultVolume(0.8f); // Adjust volume as needed
+	kickSound->setDefaultVolume(0.8f);
 	int scrWidth, scrHeight;
 	glfwGetFramebufferSize(window, &scrWidth, &scrHeight);
 	glViewport(0, 0, scrWidth, scrHeight);
@@ -1401,12 +1458,16 @@ int main()
 		switch (currentState) {
 		case GAME_INTRO:
 		case INTRO_P1:
+			
 		case INTRO_P2:
+
 		case TRANSITION_TO_GAMEPLAY:
 			updateIntroCamera(window, deltaTime);
 			break;
 		case START_ROUND:
 			startCountdown();
+			if (soundEngine->isCurrentlyPlaying(BGM) == false)
+				soundEngine->play2D(BGM, true);
 			break;
 		case GAMEPLAY:
 			// Gameplay logic
@@ -1415,6 +1476,7 @@ int main()
 			UpdateStateP1(window, player1_animator, P1charState, blendAmountP1);
 			UpdateStateP2(window, player2_animator, P2charState, blendAmountP2);
 			updateGameplay();
+			
 			break;
 
 		case P1_WINS:
@@ -1623,6 +1685,9 @@ void UpdateStateP1(GLFWwindow* window, Animator& animator, AnimStateP1& charStat
 			charState = P1_PUNCH_IDLE;
 		}
 		//printf("idle_punch\n");
+		if (soundEngine->isCurrentlyPlaying(P1swishSound) == false)
+			soundEngine->play2D(P1swishSound, false);
+
 		break;
 	case P1_PUNCH_IDLE:
 		if (animator.m_CurrentTime > 0.6 * (punchAnimationP1.GetDuration() * 1.0f)) {
@@ -1715,11 +1780,11 @@ void UpdateStateP1(GLFWwindow* window, Animator& animator, AnimStateP1& charStat
 		//printf("idle_hit\n");
 		break;
 	case P1_HIT_IDLE:
-		if (animator.m_CurrentTime > 0.7f * hitAnimationP1.GetDuration()) {
+		if (animator.m_CurrentTime > 0.6f * hitAnimationP1.GetDuration()) {
 			blendAmount += blendRate;
 			blendAmount = fmod(blendAmount, 1.0f);
 			animator.PlayAnimation(&hitAnimationP1, &idleAnimationP1, animator.m_CurrentTime, animator.m_CurrentTime2, blendAmount);
-			if (blendAmount > 0.7f) {
+			if (blendAmount > 0.5f) {
 				blendAmount = 0.0f;
 				float startTime = animator.m_CurrentTime2;
 				animator.PlayAnimation(&idleAnimationP1, NULL, startTime, 0.0f, blendAmount);
@@ -1846,6 +1911,8 @@ void UpdateStateP1(GLFWwindow* window, Animator& animator, AnimStateP1& charStat
 				animator.PlayAnimation(&punchAnimationP2, NULL, startTime, 0.0f, blendAmount);
 				charState = P2_PUNCH_IDLE;
 			}
+			if (soundEngine->isCurrentlyPlaying(P2swishSound) == false)
+				soundEngine->play2D(P2swishSound, false);
 			//printf("idle_punch\n");
 			break;
 		case  P2_PUNCH_IDLE:
@@ -1939,11 +2006,11 @@ void UpdateStateP1(GLFWwindow* window, Animator& animator, AnimStateP1& charStat
 			//printf("idle_hit\n");
 			break;
 		case  P2_HIT_IDLE:
-			if (animator.m_CurrentTime > 0.7f * hitAnimationP2.GetDuration()) {
+			if (animator.m_CurrentTime > 0.6f * hitAnimationP2.GetDuration()) {
 				blendAmount += blendRate;
 				blendAmount = fmod(blendAmount, 1.0f);
 				animator.PlayAnimation(&hitAnimationP2, &idleAnimationP2, animator.m_CurrentTime, animator.m_CurrentTime2, blendAmount);
-				if (blendAmount > 0.7f) {
+				if (blendAmount > 0.5f) {
 					blendAmount = 0.0f;
 					float startTime = animator.m_CurrentTime2;
 					animator.PlayAnimation(&idleAnimationP2, NULL, startTime, 0.0f, blendAmount);
