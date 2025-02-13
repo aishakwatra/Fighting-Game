@@ -20,7 +20,7 @@
 #include <thread>
 #include "Skybox.h"
 
-#define MAX_HEALTH 150.0f
+#define MAX_HEALTH 10.0f
 #define HIT_PAUSE_DURATION 0.1f // adjust the duration as necessary
 
 
@@ -70,11 +70,9 @@ enum GameState {
 	TRANSITION_TO_GAMEPLAY,
 	START_ROUND,
 	GAMEPLAY,
-	END_ROUND,
 	P1_WINS,
 	P2_WINS,
-	PLAYERS_TIE,
-	RESTART
+	PLAYERS_TIE
 };
 
 GameState currentState = GAME_INTRO;
@@ -424,14 +422,12 @@ void updateEndCamera(GLFWwindow* window, float deltaTime) {
 	static int lastState = -1; // To track the last state and avoid replaying animations
 
 	if (currentState != lastState) {
+
 		// Only execute this block if the state has changed
 		if (currentState == P1_WINS) {
 
 			//camera lerp to player 1
 			//winning dance
-
-			player1_animator.PlayAnimation(&victoryAnimationP1, nullptr, 0.0f, 0.0f, 0.0f);
-			player2_animator.PlayAnimation(&defeatAnimationP2, nullptr, 0.0f, 0.0f, 0.0f);
 
 		}
 		else if (currentState == P2_WINS) {
@@ -439,15 +435,7 @@ void updateEndCamera(GLFWwindow* window, float deltaTime) {
 			//camera lerp to player 2
 			//winning dance
 
-			player1_animator.PlayAnimation(&defeatAnimationP1, nullptr, 0.0f, 0.0f, 0.0f);
-			player2_animator.PlayAnimation(&victoryAnimationP2, nullptr, 0.0f, 0.0f, 0.0f);
 
-		}
-		else if (currentState == PLAYERS_TIE) {
-
-			//normal camera view
-			player1_animator.PlayAnimation(&idleAnimationP1, nullptr, 0.0f, 0.0f, 0.0f);
-			player2_animator.PlayAnimation(&idleAnimationP2, nullptr, 0.0f, 0.0f, 0.0f);
 
 		}
 
@@ -455,11 +443,11 @@ void updateEndCamera(GLFWwindow* window, float deltaTime) {
 
 	}
 
-	if (elapsedTime >= 5.0f) {
+	/*if (elapsedTime >= 5.0f) {
 		restartRound();
 		elapsedTime = 0.0f;
 		lastState = -1;
-	}
+	}*/
 
 
 }
@@ -548,9 +536,6 @@ void updateText(Shader& textShader, float deltaTime) {
 		RenderText(textShader, "PLAYER 2 WINS", SCR_WIDTH / 2 - 50, SCR_HEIGHT / 2, 2.0f, whiteColor);
 	}
 
-	else if (currentState == PLAYERS_TIE) {
-		RenderText(textShader, "TIE", SCR_WIDTH / 2 - 50, SCR_HEIGHT / 2, 2.0f, whiteColor);
-	}
 
 }
 
@@ -582,28 +567,45 @@ void startCountdown() {
 
 }
 
+void checkEndofGame() {
+
+	if (player1Stats.playerScore == 3) {
+		player1_animator.PlayAnimation(&victoryAnimationP1, nullptr, 0.0f, 0.0f, 0.0f);
+		player2_animator.PlayAnimation(&defeatAnimationP2, nullptr, 0.0f, 0.0f, 0.0f);
+		currentState = P1_WINS;
+	}
+	else if (player2Stats.playerScore == 3) {
+		player1_animator.PlayAnimation(&defeatAnimationP1, nullptr, 0.0f, 0.0f, 0.0f);
+		player2_animator.PlayAnimation(&victoryAnimationP2, nullptr, 0.0f, 0.0f, 0.0f);
+		currentState = P2_WINS;
+	}
+
+}
+
 void updateGameplay() {
 
 	timer.update();
 
 	if (player1Stats.playerHealth <= 0.0f) {
 		std::cout << "Player 2 wins this round!" << std::endl;
-		currentState = P2_WINS;
+		restartRound();
 		player2Stats.playerScore += 1;
-
+		checkEndofGame();
 	}
 	else if (player2Stats.playerHealth <= 0.0f) {
 		std::cout << "Player 1 wins this round!" << std::endl;
-		currentState = P1_WINS;
+		restartRound();
 		player1Stats.playerScore += 1;
-
+		checkEndofGame();
 	}
 
 	if (timer.isTimeUp()) {
-		currentState = PLAYERS_TIE;
+		restartRound();
 	}
-	
+
 }
+
+
 
 void updateCapsules() {
 	// Adjust these values based on the character's current pose and animation
@@ -1419,7 +1421,6 @@ int main()
 
 		case P1_WINS:
 		case P2_WINS:
-		case PLAYERS_TIE:
 			updateEndCamera(window, deltaTime);
 			break;
 		}
