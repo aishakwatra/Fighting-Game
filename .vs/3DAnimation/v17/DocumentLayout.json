@@ -7,16 +7,16 @@
       "RelativeMoniker": "D:0:0:{71D0993F-FCED-4A19-B589-CB5AB53F9111}|3DAnimation\\3DAnimation.vcxproj|solutionrelative:3DAnimation\\3DAnimation.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     },
     {
+      "AbsoluteMoniker": "D:0:0:{71D0993F-FCED-4A19-B589-CB5AB53F9111}|3DAnimation\\3DAnimation.vcxproj|D:\\Capt\\Fighting-Game\\3DAnimation\\animation.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{71D0993F-FCED-4A19-B589-CB5AB53F9111}|3DAnimation\\3DAnimation.vcxproj|solutionrelative:3DAnimation\\animation.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{71D0993F-FCED-4A19-B589-CB5AB53F9111}|3DAnimation\\3DAnimation.vcxproj|D:\\Capt\\Fighting-Game\\3DAnimation\\model.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
       "RelativeMoniker": "D:0:0:{71D0993F-FCED-4A19-B589-CB5AB53F9111}|3DAnimation\\3DAnimation.vcxproj|solutionrelative:3DAnimation\\model.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{71D0993F-FCED-4A19-B589-CB5AB53F9111}|3DAnimation\\3DAnimation.vcxproj|D:\\Capt\\Fighting-Game\\3DAnimation\\mesh.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
       "RelativeMoniker": "D:0:0:{71D0993F-FCED-4A19-B589-CB5AB53F9111}|3DAnimation\\3DAnimation.vcxproj|solutionrelative:3DAnimation\\mesh.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{71D0993F-FCED-4A19-B589-CB5AB53F9111}|3DAnimation\\3DAnimation.vcxproj|D:\\Capt\\Fighting-Game\\3DAnimation\\animation.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
-      "RelativeMoniker": "D:0:0:{71D0993F-FCED-4A19-B589-CB5AB53F9111}|3DAnimation\\3DAnimation.vcxproj|solutionrelative:3DAnimation\\animation.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{71D0993F-FCED-4A19-B589-CB5AB53F9111}|3DAnimation\\3DAnimation.vcxproj|D:\\Capt\\Fighting-Game\\3DAnimation\\animator.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
@@ -68,7 +68,7 @@
               "RelativeDocumentMoniker": "3DAnimation\\3DAnimation.cpp",
               "ToolTip": "D:\\Capt\\Fighting-Game\\3DAnimation\\3DAnimation.cpp",
               "RelativeToolTip": "3DAnimation\\3DAnimation.cpp",
-              "ViewState": "AQIAAAAAAAAAAAAAAAAAAA4AAAAAAAAA",
+              "ViewState": "AQIAACMDAAAAAAAAAAAYwEUDAAAGAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
               "WhenOpened": "2024-12-12T06:01:19.043Z",
               "IsPinned": true,
@@ -76,16 +76,17 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 1,
               "Title": "animation.h",
               "DocumentMoniker": "D:\\Capt\\Fighting-Game\\3DAnimation\\animation.h",
               "RelativeDocumentMoniker": "3DAnimation\\animation.h",
               "ToolTip": "D:\\Capt\\Fighting-Game\\3DAnimation\\animation.h",
               "RelativeToolTip": "3DAnimation\\animation.h",
-              "ViewState": "AgIAAE4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "ViewState": "AQIAAC0AAAAAAAAAAAAgwD0AAAAAAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
               "WhenOpened": "2024-12-12T06:01:19.244Z",
-              "IsPinned": true
+              "IsPinned": true,
+              "EditorCaption": ""
             },
             {
               "$type": "Bookmark",
@@ -97,7 +98,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 3,
               "Title": "mesh.h",
               "DocumentMoniker": "D:\\Capt\\Fighting-Game\\3DAnimation\\mesh.h",
               "RelativeDocumentMoniker": "3DAnimation\\mesh.h",
@@ -109,7 +110,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 2,
               "Title": "model.h",
               "DocumentMoniker": "D:\\Capt\\Fighting-Game\\3DAnimation\\model.h",
               "RelativeDocumentMoniker": "3DAnimation\\model.h",

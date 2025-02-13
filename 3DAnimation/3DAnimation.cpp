@@ -781,7 +781,11 @@ void handleCollisions(GLFWwindow* window, float deltaTime) {
 					player2Stats.shakeTimer = shakeDuration;
 				}
 
-				
+
+				if (soundEngine->isCurrentlyPlaying(P1swishSound) == false)
+				{
+					soundEngine->play2D(P1swishSound, false);
+				}
 
 			}
 		}
@@ -837,7 +841,10 @@ void handleCollisions(GLFWwindow* window, float deltaTime) {
 					player1Stats.shakeTimer = shakeDuration;
 				}
 
-				
+				if (soundEngine->isCurrentlyPlaying(P2swishSound) == false)
+				{
+					soundEngine->play2D(P2swishSound, false);
+				}
 
 			}
 		}
@@ -1695,6 +1702,7 @@ void UpdateStateP1(GLFWwindow* window, Animator& animator, AnimStateP1& charStat
 			animator.PlayAnimation(&punchAnimationP1, NULL, startTime, 0.0f, blendAmount);
 			charState = P1_PUNCH_IDLE;
 		}
+
 		//printf("idle_punch\n")
 
 		break;
