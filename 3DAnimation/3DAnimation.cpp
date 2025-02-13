@@ -31,7 +31,7 @@ ISoundSource* P2swishSound;
 ISoundSource* BGM;
 ISoundSource* introP1Sound;
 ISoundSource* introP2Sound;
-ISoundSource* crowdP1Sound;
+ISoundSource* crowdSound;
 
 #define MAX_HEALTH 150.0f
 #define HIT_PAUSE_DURATION 0.1f // adjust the duration as necessary
@@ -313,8 +313,8 @@ void updateIntroCamera(GLFWwindow* window, float deltaTime) {
 			currentState = INTRO_P1;
 			if (soundEngine->isCurrentlyPlaying(introP1Sound) == false)
 				soundEngine->play2D(introP1Sound, false);
-			if (soundEngine->isCurrentlyPlaying(crowdP1Sound) == false)
-				soundEngine->play2D(crowdP1Sound, false);
+			if (soundEngine->isCurrentlyPlaying(crowdSound) == false)
+				soundEngine->play2D(crowdSound, false);
 			introTimer = 0.0f;
 			transitionTimer = 0.0f;
 			player1_animator.PlayAnimation(&introAnimationP1, nullptr, 0.0f, 0.0f, 0.0f);
@@ -358,8 +358,8 @@ void updateIntroCamera(GLFWwindow* window, float deltaTime) {
 			soundEngine->stopAllSounds();
 			if (soundEngine->isCurrentlyPlaying(introP2Sound) == false)
 				soundEngine->play2D(introP2Sound, false);
-			if (soundEngine->isCurrentlyPlaying(crowdP1Sound) == false)
-				soundEngine->play2D(crowdP1Sound, false);
+			if (soundEngine->isCurrentlyPlaying(crowdSound) == false)
+				soundEngine->play2D(crowdSound, false);
 			introTimer = 0.0f;
 			transitionTimer = 0.0f; // Reset transition timer
 			player1_animator.PlayAnimation(&idleAnimationP1, nullptr, 0.0f, 0.0f, 0.0f);
@@ -765,11 +765,17 @@ void handleCollisions(GLFWwindow* window, float deltaTime) {
 					if (isP1Kicked) {
 						// Apply additional knockback and trigger fall animation for kicks
 						player2Position.z += knockback * 5 * deltaTime; // Double knockback for kicks
-						soundEngine->play2D(kickSound, false);
+						player1Position.z += knockback * deltaTime;
+						
 					}
-					player2Position.z += knockback * deltaTime;
-					player1Position.z += knockback * deltaTime;
-					//soundEngine->play2D(punchSound, false);
+					else
+					{
+						//soundEngine->play2D(punchSound, false);
+						player2Position.z += knockback * deltaTime;
+						player1Position.z += knockback * deltaTime;
+					}
+					
+					
 					//player1_animator.pauseAtCurrentTime();
 					//player1_animator.pauseAtCurrentTime();
 					player2Stats.shakeTimer = shakeDuration;
@@ -817,11 +823,15 @@ void handleCollisions(GLFWwindow* window, float deltaTime) {
 					if (isP2Kicked) {
 						// Apply additional knockback and trigger fall animation for kicks
 						player1Position.z += knockback * 5 * deltaTime; // Double knockback for kicks
-						//soundEngine->play2D(kickSound, false);
+						player2Position.z += knockback * deltaTime;
+						soundEngine->play2D(kickSound, false);
 					}
-					player1Position.z += knockback * deltaTime;
-					player2Position.z += knockback * deltaTime;
-					//soundEngine->play2D(punchSound, false);
+					else
+					{
+						//soundEngine->play2D(punchSound, false);
+						player1Position.z += knockback * deltaTime;
+						player2Position.z += knockback * deltaTime;
+					}
 					//player1_animator.pauseAtCurrentTime();
 					//player1_animator.pauseAtCurrentTime();
 					player1Stats.shakeTimer = shakeDuration;
@@ -1327,7 +1337,7 @@ int main()
 	 P2swishSound = soundEngine->addSoundSourceFromFile("Sounds/swish.mp3");
 	 BGM = soundEngine->addSoundSourceFromFile("Sounds/Fight or Flight.mp3");
 	 introP1Sound = soundEngine->addSoundSourceFromFile("Sounds/IntroP1.mp3");
-	 crowdP1Sound = soundEngine->addSoundSourceFromFile("Sounds/crowd.mp3");
+	 crowdSound = soundEngine->addSoundSourceFromFile("Sounds/crowd.mp3");
 	 introP2Sound = soundEngine->addSoundSourceFromFile("Sounds/IntroP2.mp3");
 
 	
@@ -1350,9 +1360,10 @@ int main()
 	// draw in wireframe
 	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	
-
-	punchSound->setDefaultVolume(0.8f); // Adjust volume as needed
-	kickSound->setDefaultVolume(0.8f);
+	introP1Sound->setDefaultVolume(0.5f);
+	introP1Sound->setDefaultVolume(0.5f);
+	crowdSound->setDefaultVolume(0.5f);
+	kickSound->setDefaultVolume(1.0f);
 	int scrWidth, scrHeight;
 	glfwGetFramebufferSize(window, &scrWidth, &scrHeight);
 	glViewport(0, 0, scrWidth, scrHeight);
@@ -1684,9 +1695,7 @@ void UpdateStateP1(GLFWwindow* window, Animator& animator, AnimStateP1& charStat
 			animator.PlayAnimation(&punchAnimationP1, NULL, startTime, 0.0f, blendAmount);
 			charState = P1_PUNCH_IDLE;
 		}
-		//printf("idle_punch\n");
-		if (soundEngine->isCurrentlyPlaying(P1swishSound) == false)
-			soundEngine->play2D(P1swishSound, false);
+		//printf("idle_punch\n")
 
 		break;
 	case P1_PUNCH_IDLE:
@@ -1777,6 +1786,22 @@ void UpdateStateP1(GLFWwindow* window, Animator& animator, AnimStateP1& charStat
 			animator.PlayAnimation(&hitAnimationP1, NULL, startTime, 0.0f, blendAmount);
 			charState = P1_HIT_IDLE;
 		}
+		if (P2charState == P2_IDLE_KICK)
+		{
+			if (soundEngine->isCurrentlyPlaying(kickSound) == false)
+			{
+				soundEngine->play2D(kickSound, false);
+			}
+		}
+		else
+		{
+			if (soundEngine->isCurrentlyPlaying(punchSound) == false)
+			{
+				soundEngine->play2D(punchSound, false);
+			}
+			
+		}
+		
 		//printf("idle_hit\n");
 		break;
 	case P1_HIT_IDLE:
@@ -1911,8 +1936,7 @@ void UpdateStateP1(GLFWwindow* window, Animator& animator, AnimStateP1& charStat
 				animator.PlayAnimation(&punchAnimationP2, NULL, startTime, 0.0f, blendAmount);
 				charState = P2_PUNCH_IDLE;
 			}
-			if (soundEngine->isCurrentlyPlaying(P2swishSound) == false)
-				soundEngine->play2D(P2swishSound, false);
+			
 			//printf("idle_punch\n");
 			break;
 		case  P2_PUNCH_IDLE:
@@ -2002,6 +2026,21 @@ void UpdateStateP1(GLFWwindow* window, Animator& animator, AnimStateP1& charStat
 				float startTime = animator.m_CurrentTime2;
 				animator.PlayAnimation(&hitAnimationP2, NULL, startTime, 0.0f, blendAmount);
 				charState = P2_HIT_IDLE;
+			}
+			if (P1charState == P1_IDLE_KICK)
+			{
+				if (soundEngine->isCurrentlyPlaying(kickSound) == false)
+				{
+					soundEngine->play2D(kickSound, false);
+				}
+			}
+			else
+			{
+				if (soundEngine->isCurrentlyPlaying(punchSound) == false)
+				{
+					soundEngine->play2D(punchSound, false);
+				}
+
 			}
 			//printf("idle_hit\n");
 			break;
