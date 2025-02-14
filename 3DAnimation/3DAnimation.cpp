@@ -33,7 +33,7 @@ ISoundSource* introP1Sound;
 ISoundSource* introP2Sound;
 ISoundSource* crowdSound;
 
-#define MAX_HEALTH 10.0f
+#define MAX_HEALTH 100.0f
 #define HIT_PAUSE_DURATION 0.1f // adjust the duration as necessary
 
 
@@ -213,8 +213,8 @@ glm::vec3 player1gamePosition = glm::vec3(0.0f, -0.4f, 0.0f);
 glm::vec3 player2gamePosition = glm::vec3(0.0f, -0.4f, 3.0f);
 float moveSpeed = 0.9f;
 float knockback = 1.0f;
-int P1punchDamage = 2;
-int P1kickDamage = 4;
+int P1punchDamage = 4;
+int P1kickDamage = 6;
 int P2punchDamage = 4;
 int P2kickDamage = 6;
 Animator player1_animator(&idleAnimationP1);
@@ -496,7 +496,7 @@ void updateText(Shader& textShader, float deltaTime) {
 			gameNameScale = glm::max(minScale, gameNameScale - deltaTime * slamSpeed);
 		}
 	
-		RenderText(textShader, "GAME NAME", SCR_WIDTH / 2 - 150, SCR_HEIGHT / 2, gameNameScale, whiteColor);
+		RenderText(textShader, "WOKE WARRIORS", SCR_WIDTH / 2 - 150, SCR_HEIGHT / 2, gameNameScale, whiteColor);
 
 	}
 	else if (currentState == INTRO_P1) {
@@ -988,7 +988,7 @@ int main()
 
 	// glfw window creation
 	// --------------------
-	GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "LearnOpenGL", NULL, NULL);
+	GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "WokeWariors", NULL, NULL);
 	if (window == NULL)
 	{
 		std::cout << "Failed to create GLFW window" << std::endl;
@@ -998,9 +998,9 @@ int main()
 	glfwMakeContextCurrent(window);
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 	
-	glfwSetCursorPosCallback(window, mouse_callback);
+	//glfwSetCursorPosCallback(window, mouse_callback);
 	
-	glfwSetScrollCallback(window, scroll_callback);
+	//glfwSetScrollCallback(window, scroll_callback);
 
 	// tell GLFW to capture our mouse
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
