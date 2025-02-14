@@ -307,7 +307,7 @@ void updateIntroCamera(GLFWwindow* window, float deltaTime) {
 		introTimer += deltaTime;
 
 		// Transition to INTRO_P1 state
-		if (introTimer >= 5.0f || glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
+		if (introTimer >= 8.0f || glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
 			currentState = INTRO_P1;
 			if (soundEngine->isCurrentlyPlaying(introP1Sound) == false)
 				soundEngine->play2D(introP1Sound, false);
@@ -429,10 +429,6 @@ void updateIntroCamera(GLFWwindow* window, float deltaTime) {
 		}
 	}
 
-
-
-
-
 }
 
 
@@ -481,6 +477,9 @@ void updateText(Shader& textShader, float deltaTime) {
 	elapsedTime += deltaTime;
 
 	glm::vec3 whiteColor = glm::vec3(1.0f, 1.0f, 1.0f);
+	glm::vec3 pinkColor = glm::vec3(0.871f, 0.224f, 0.353f);
+	glm::vec3 purpleColor = glm::vec3(0.471f, 0.098f, 0.78f);
+	glm::vec3 yellowColor = glm::vec3(0.91f, 0.808f, 0.224f);
 
 	if (currentState == GAME_INTRO) {
 
@@ -496,7 +495,7 @@ void updateText(Shader& textShader, float deltaTime) {
 			gameNameScale = glm::max(minScale, gameNameScale - deltaTime * slamSpeed);
 		}
 	
-		RenderText(textShader, "WOKE WARRIORS", SCR_WIDTH / 2 - 150, SCR_HEIGHT / 2, gameNameScale, whiteColor);
+		RenderText(textShader, "WOKE WARRIORS", SCR_WIDTH / 2 - 150, SCR_HEIGHT / 2, gameNameScale, pinkColor);
 
 	}
 	else if (currentState == INTRO_P1) {
@@ -511,7 +510,7 @@ void updateText(Shader& textShader, float deltaTime) {
 
 		player1X = glm::min(player1X + speed * deltaTime, targetX); // Slide in
 
-		RenderText(textShader, "BIG VEGAS", player1X, SCR_HEIGHT - 150, 1.0f, whiteColor);
+		RenderText(textShader, "BIG VEGAS", player1X, SCR_HEIGHT - 150, 1.0f, yellowColor);
 
 	}
 	else if (currentState == INTRO_P2) {
@@ -522,11 +521,11 @@ void updateText(Shader& textShader, float deltaTime) {
 		// Slice in from the right
 		static float player2X = SCR_WIDTH + 1000.0f; // Off-screen start
 		const float targetX = SCR_WIDTH - 400.0f;   // Final position
-		const float speed = 300.0f;                 // Sliding speed
+		const float speed = 330.0f;                 // Sliding speed
 
 		player2X = glm::max(player2X - speed * deltaTime, targetX);
 
-		RenderText(textShader, "EL CHUPACABRA", player2X, SCR_HEIGHT - 150, 1.0f, whiteColor);
+		RenderText(textShader, "EL CHUPACABRA", player2X, SCR_HEIGHT - 150, 1.0f, purpleColor);
 
 	}
 
